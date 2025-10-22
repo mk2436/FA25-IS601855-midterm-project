@@ -210,6 +210,39 @@ def test_integer_division_by_zero(operand1, operand2):
 
 
 # ------------------------------------------------------------
+# PERCENTAGE TESTS
+# ------------------------------------------------------------
+@pytest.mark.parametrize(
+    "operand1, operand2, expected_result",
+    [
+        (Decimal("50"), Decimal("10"), Decimal("5")),         # 10% of 50 = 5
+        (Decimal("100"), Decimal("0"), Decimal("0")),         # 0% of 100 = 0
+        (Decimal("75.5"), Decimal("20"), Decimal("15.1")),    # 20% of 75.5 = 15.1
+        (Decimal("1e6"), Decimal("25"), Decimal("250000")),   # Large numbers
+        (Decimal("0"), Decimal("100"), Decimal("0")),         # Zero base
+    ],
+)
+def test_percentage_valid(operand1, operand2, expected_result):
+    """Test valid percentage calculations."""
+    calc = Calculation(operation="Percentage", operand1=operand1, operand2=operand2)
+    assert calc.result == expected_result
+
+
+@pytest.mark.parametrize(
+    "operand1, operand2, expected_message",
+    [
+        (Decimal("-50"), Decimal("10"), "Negative values are not allowed in percentage calculations"),
+        (Decimal("50"), Decimal("-10"), "Negative values are not allowed in percentage calculations"),
+        (Decimal("-5"), Decimal("-10"), "Negative values are not allowed in percentage calculations"),
+    ],
+)
+def test_percentage_negative_values(operand1, operand2, expected_message):
+    """Test that negative values in percentage calculation raise an OperationError."""
+    with pytest.raises(OperationError, match=expected_message):
+        Calculation(operation="Percentage", operand1=operand1, operand2=operand2)
+
+
+# ------------------------------------------------------------
 # UNKNOWN OPERATION TEST
 # ------------------------------------------------------------
 @pytest.mark.parametrize(

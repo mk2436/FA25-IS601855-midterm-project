@@ -13,6 +13,7 @@ from app.operations import (
     Division,
     Power,
     Root,
+    Percentage,
     OperationFactory,
 )
 
@@ -319,5 +320,33 @@ class TestIntDivision(BaseOperationTest):
             "b": "0",
             "error": ValidationError,
             "message": "Division by zero is not allowed",
+        },
+    }
+
+
+class TestPercentage(BaseOperationTest):
+    """Test Percentage operation."""
+
+    operation_class = Percentage
+
+    valid_test_cases = {
+        "basic_percentage": {"a": "50", "b": "10", "expected": "5"},
+        "zero_percentage": {"a": "100", "b": "0", "expected": "0"},
+        "large_numbers": {"a": "1e6", "b": "25", "expected": "250000"},
+        "decimal_percentage": {"a": "75.5", "b": "20", "expected": "15.1"},
+    }
+
+    invalid_test_cases = {
+        "negative_a": {
+            "a": "-50",
+            "b": "10",
+            "error": ValidationError,
+            "message": "Percentage cannot be negative",
+        },
+        "negative_b": {
+            "a": "50",
+            "b": "-10",
+            "error": ValidationError,
+            "message": "Percentage cannot be negative",
         },
     }

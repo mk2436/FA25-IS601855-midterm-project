@@ -138,6 +138,7 @@ def test_set_operation(calculator, operation_name):
         ("root", 27, 3, Decimal('3')),
         ("modulus", 10, 3, Decimal('1')),
         ("int_divide", 10, 3, Decimal('3')),
+        ("percentage", 200, 10, Decimal('20')),
     ]
 )
 def test_perform_operation_success(calculator, op_name, a, b, expected_result):

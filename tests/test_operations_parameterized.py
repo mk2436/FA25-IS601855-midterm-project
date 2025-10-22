@@ -2,6 +2,7 @@ import pytest
 from decimal import Decimal, getcontext
 from app.operations import (
     Addition,
+    Percentage,
     Subtraction,
     Multiplication,
     Division,
@@ -265,3 +266,41 @@ def test_int_division_zero_and_near_zero(a, b):
         result = op.execute(a, b)
         assert isinstance(result, Decimal)
         assert result == (a // b)
+
+
+# ---------------------------------------------------------
+# Percentage
+# ---------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "a, b, expected",
+    [
+        ("50", "10", "5"),          # basic percentage
+        ("100", "0", "0"),          # zero percentage
+        ("1e6", "25", "250000"),    # large numbers
+        ("75.5", "20", "15.1"),     # decimal percentage
+    ],
+)
+def test_percentage_valid_cases(a, b, expected):
+    """Test valid Percentage calculations."""
+    op = Percentage()
+    result = op.execute(Decimal(a), Decimal(b))
+    # Compare as Decimals to avoid string formatting inconsistencies
+    assert result == Decimal(expected), f"Expected {expected}, got {result}"
+
+
+@pytest.mark.parametrize(
+    "a, b, error, message",
+    [
+        ("-50", "10", ValidationError, "Percentage cannot be negative"),
+        ("50", "-10", ValidationError, "Percentage cannot be negative"),
+    ],
+)
+def test_percentage_invalid_cases(a, b, error, message):
+    """Test invalid Percentage calculations raising ValidationError."""
+    op = Percentage()
+    with pytest.raises(error) as excinfo:
+        op.execute(Decimal(a), Decimal(b))
+    assert message in str(excinfo.value)
+
+

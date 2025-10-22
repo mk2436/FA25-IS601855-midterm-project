@@ -324,6 +324,44 @@ class Int_division(Operation):
         self.validate_operands(a, b)
         return a // b
 
+
+
+class Percentage(Operation):
+    """
+    Percentage operation implementation.
+
+    Calculates the percentage of a number.
+    """
+    def validate_operands(self, a: Decimal, b: Decimal) -> None:
+        """
+        Validate operands for percentage operation.
+
+        Overrides the base class method to ensure that the percentage is not negative.
+
+        Args:
+            a (Decimal): The base number.
+            b (Decimal): The percentage to calculate.
+        
+        """
+        super().validate_operands(a, b)
+        if b < 0 or a < 0:
+            raise ValidationError("Percentage cannot be negative")
+
+    def execute(self, a: Decimal, b: Decimal) -> Decimal:
+        """
+        Calculate the percentage of a number.
+
+        Args:
+            a (Decimal): The base number.
+            b (Decimal): The percentage to calculate.
+
+        Returns:
+            Decimal: The calculated percentage of the base number.
+        """
+        self.validate_operands(a, b)
+        result =  (a * b) / Decimal(100)
+        return result.normalize() 
+
 class OperationFactory:
     """
     Factory class for creating operation instances.
@@ -343,6 +381,7 @@ class OperationFactory:
         'root': Root,
         'modulus': Modulus,
         'int_divide': Int_division,
+        'percentage': Percentage,
     }
 
     @classmethod

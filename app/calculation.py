@@ -7,7 +7,6 @@ import datetime
 from decimal import Decimal, InvalidOperation
 import logging
 from typing import Any, Dict
-
 from app.exceptions import OperationError
 
 
@@ -68,6 +67,7 @@ class Calculation:
             ),
             "Modulus": lambda x, y: x % y if y != 0 else self._raise_div_zero(),
             "Int_division": lambda x, y: x // y if y != 0 else self._raise_div_zero(),
+            "Percentage": lambda x, y: (x * y) / Decimal(100) if y >= 0 and x >= 0 else self._raise_neg_percentage(),
         }
 
         # Retrieve the operation function based on the operation name
@@ -99,6 +99,15 @@ class Calculation:
         This method is called when a negative exponent is used in a power operation.
         """
         raise OperationError("Negative exponents are not supported")
+
+    @staticmethod
+    def _raise_neg_percentage():  # pragma: no cover
+        """
+        Helper method to raise negative percentage error.
+
+        This method is called when negative values are used in percentage calculations.
+        """
+        raise OperationError("Negative values are not allowed in percentage calculations")
 
     @staticmethod
     def _raise_invalid_root(x: Decimal, y: Decimal):  # pragma: no cover

@@ -2,6 +2,8 @@ import pytest
 from unittest.mock import patch
 from app.calculator_repl import calculator_repl
 from app.exceptions import ValidationError, OperationError
+from app import operations  # import the operation classes
+
 
 @pytest.mark.parametrize(
     "user_inputs, expected_prints",
@@ -249,9 +251,7 @@ def test_calculator_repl_known_exceptions(exception, expected_message):
             f"Expected '{expected_message}' not found in printed lines: {printed_lines}"
         
 
-import pytest
-from unittest.mock import patch
-from app import operations  # import the operation classes
+
 
 @pytest.mark.parametrize(
     "operation, operand1, operand2, operation_class, mock_result, expected_print",
@@ -264,6 +264,7 @@ from app import operations  # import the operation classes
         ("int_divide", "10", "3", operations.Int_division, "Result: 3", "Result: 3"),
         ("power", "2", "3", operations.Power, "Result: 8", "Result: 8"),
         ("root", "16", "2", operations.Root, "Result: 4", "Result: 4"),
+        ("percentage", "3", "4", operations.Percentage, "Result: 0.12", "Result: 0.12"),
     ],
 )
 def test_calculator_repl_operations(operation, operand1, operand2, operation_class, mock_result, expected_print):
