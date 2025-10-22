@@ -147,6 +147,69 @@ def test_invalid_root(operand1, operand2):
 
 
 # ------------------------------------------------------------
+# MODULUS TESTS
+# ------------------------------------------------------------
+@pytest.mark.parametrize(
+    "operand1, operand2, expected_result",
+    [
+        (Decimal("10"), Decimal("3"), Decimal("1")),       # Basic modulus
+        (Decimal("9"), Decimal("3"), Decimal("0")),        # Divisible numbers
+        (Decimal("-10"), Decimal("3"), Decimal("-1")),     # Negative dividend
+        (Decimal("10"), Decimal("-3"), Decimal("1")),      # Negative divisor
+    ],
+)
+def test_modulus(operand1, operand2, expected_result):
+    """Test valid modulus operations."""
+    calc = Calculation(operation="Modulus", operand1=operand1, operand2=operand2)
+    assert calc.result == expected_result
+
+
+@pytest.mark.parametrize(
+    "operand1, operand2",
+    [
+        (Decimal("5"), Decimal("0")),    # Division by zero not allowed
+        (Decimal("0"), Decimal("0")),
+    ],
+)
+def test_modulus_by_zero(operand1, operand2):
+    """Test that modulus by zero raises an OperationError."""
+    with pytest.raises(OperationError, match="Division by zero is not allowed"):
+        Calculation(operation="Modulus", operand1=operand1, operand2=operand2)
+
+
+# ------------------------------------------------------------
+# INTEGER DIVISION TESTS
+# ------------------------------------------------------------
+@pytest.mark.parametrize(
+    "operand1, operand2, expected_result",
+    [
+        (Decimal("10"), Decimal("3"), Decimal("3")),        # Integer division result
+        (Decimal("9"), Decimal("3"), Decimal("3")),         # Exact division
+        (Decimal("10"), Decimal("-3"), Decimal("-3")),      # Negative divisor
+        (Decimal("-10"), Decimal("3"), Decimal("-3")),      # Negative dividend
+        (Decimal("0"), Decimal("5"), Decimal("0")),         # Zero dividend
+    ],
+)
+def test_integer_division(operand1, operand2, expected_result):
+    """Test valid integer division scenarios."""
+    calc = Calculation(operation="Int_division", operand1=operand1, operand2=operand2)
+    assert calc.result == expected_result
+
+
+@pytest.mark.parametrize(
+    "operand1, operand2",
+    [
+        (Decimal("10"), Decimal("0")),
+        (Decimal("0"), Decimal("0")),
+    ],
+)
+def test_integer_division_by_zero(operand1, operand2):
+    """Test that integer division by zero raises an OperationError."""
+    with pytest.raises(OperationError, match="Division by zero is not allowed"):
+        Calculation(operation="Int_division", operand1=operand1, operand2=operand2)
+
+
+# ------------------------------------------------------------
 # UNKNOWN OPERATION TEST
 # ------------------------------------------------------------
 @pytest.mark.parametrize(

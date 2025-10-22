@@ -134,6 +134,10 @@ def test_set_operation(calculator, operation_name):
         ("subtract", 5, 2, Decimal('3')),
         ("multiply", 3, 3, Decimal('9')),
         ("divide", 8, 2, Decimal('4')),
+        ("power", 2, 3, Decimal('8')),
+        ("root", 27, 3, Decimal('3')),
+        ("modulus", 10, 3, Decimal('1')),
+        ("int_divide", 10, 3, Decimal('3')),
     ]
 )
 def test_perform_operation_success(calculator, op_name, a, b, expected_result):

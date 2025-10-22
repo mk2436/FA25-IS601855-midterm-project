@@ -4,6 +4,8 @@ from typing import Any, Dict, Type
 
 from app.exceptions import ValidationError
 from app.operations import (
+    Int_division,
+    Modulus,
     Operation,
     Addition,
     Subtraction,
@@ -182,6 +184,7 @@ class TestRoot(BaseOperationTest):
     }
 
 
+
 class TestOperationFactory:
     """Test OperationFactory functionality."""
 
@@ -194,6 +197,8 @@ class TestOperationFactory:
             'divide': Division,
             'power': Power,
             'root': Root,
+            'modulus': Modulus,
+            'int_divide': Int_division,
         }
 
         for op_name, op_class in operation_map.items():
@@ -225,3 +230,94 @@ class TestOperationFactory:
 
         with pytest.raises(TypeError, match="Operation class must inherit"):
             OperationFactory.register_operation("invalid", InvalidOperation)
+
+
+
+# ---------------------------
+# Test Modulus Operation
+# ---------------------------
+
+class TestModulus(BaseOperationTest):
+    """Test Modulus operation."""
+
+    operation_class = Modulus
+
+    valid_test_cases = {
+        #  Basic integer modulus
+        "positive_numbers": {"a": "10", "b": "3", "expected": "1"},
+        "divisible_numbers": {"a": "10", "b": "5", "expected": "0"},
+        "zero_dividend": {"a": "0", "b": "5", "expected": "0"},
+
+        #  Negative roots
+        "negative_dividend": {"a": "-10", "b": "3", "expected": "-1"},
+        "negative_divisor": {"a": "10", "b": "-3", "expected": "1"},
+        "both_negative": {"a": "-10", "b": "-3", "expected": "-1"},
+
+        #  Decimal precision checks
+        "decimal_operands": {"a": "10.75", "b": "2", "expected": "0.75"},
+        "small_divisor": {"a": "7.125", "b": "0.5", "expected": "0.125"},
+        "precision_case": {"a": "5.123456789", "b": "0.001", "expected": "0.000456789"},
+
+        #  Large exponents / big numbers
+        "large_numbers": {"a": "1e25", "b": "9", "expected": "1"},
+        "negative_large_numbers": {"a": "-1e25", "b": "7", "expected": "-3"},
+    }
+
+    invalid_test_cases = {
+        #  Zero and near-zero divisors
+        "divide_by_zero": {
+            "a": "10",
+            "b": "0",
+            "error": ValidationError,
+            "message": "Division by zero is not allowed",
+        },
+    }
+
+
+# ---------------------------
+# Test Integer Division
+# ---------------------------
+
+class TestIntDivision(BaseOperationTest):
+    """Test Integer Division operation."""
+
+    operation_class = Int_division
+
+    valid_test_cases = {
+        #  Basic integer division
+        "positive_numbers": {"a": "10", "b": "3", "expected": "3"},
+        "divisible_numbers": {"a": "10", "b": "5", "expected": "2"},
+        "zero_dividend": {"a": "0", "b": "5", "expected": "0"},
+
+        #  Negative roots
+        "negative_dividend": {"a": "-10", "b": "3", "expected": "-3"},
+        "negative_divisor": {"a": "10", "b": "-3", "expected": "-3"},
+        "both_negative": {"a": "-10", "b": "-3", "expected": "3"},
+
+        #  Decimal precision and rounding
+        "decimal_operands": {"a": "10.75", "b": "2", "expected": "5"},
+        "small_divisor": {"a": "7.125", "b": "0.5", "expected": "14"},
+        "precision_case": {"a": "5.123456789", "b": "0.001", "expected": "5123"},
+
+        #  Big exponent / large values
+        "large_numbers": {
+            "a": "1e25",
+            "b": "9",
+            "expected": "1111111111111111111111111",
+        },
+        "negative_large_numbers": {
+            "a": "-1e25",
+            "b": "7",
+            "expected": "-1428571428571428571428571",
+        },
+    }
+
+    invalid_test_cases = {
+        #  Zero and near-zero divisors
+        "divide_by_zero": {
+            "a": "5",
+            "b": "0",
+            "error": ValidationError,
+            "message": "Division by zero is not allowed",
+        },
+    }
