@@ -247,3 +247,46 @@ def test_calculator_repl_known_exceptions(exception, expected_message):
         # Check that the error message was printed
         assert any(expected_message in line for line in printed_lines), \
             f"Expected '{expected_message}' not found in printed lines: {printed_lines}"
+        
+
+import pytest
+from unittest.mock import patch
+from app import operations  # import the operation classes
+
+@pytest.mark.parametrize(
+    "operation, operand1, operand2, operation_class, mock_result, expected_print",
+    [
+        ("add", "2", "3", operations.Addition, "Result: 5", "Result: 5"),
+        ("subtract", "10", "4", operations.Subtraction, "Result: 6", "Result: 6"),
+        ("multiply", "3", "5", operations.Multiplication, "Result: 15", "Result: 15"),
+        ("divide", "8", "2", operations.Division, "Result: 4", "Result: 4"),
+        ("modulus", "10", "3", operations.Modulus, "Result: 1", "Result: 1"),
+        ("int_divide", "10", "3", operations.Int_division, "Result: 3", "Result: 3"),
+        ("power", "2", "3", operations.Power, "Result: 8", "Result: 8"),
+        ("root", "16", "2", operations.Root, "Result: 4", "Result: 4"),
+    ],
+)
+def test_calculator_repl_operations(operation, operand1, operand2, operation_class, mock_result, expected_print):
+    """
+    Test that valid arithmetic operations trigger perform_operation()
+    and print the correct result in the REPL.
+    """
+    user_inputs = [operation, operand1, operand2, "exit"]
+
+    with patch("builtins.input", side_effect=user_inputs), \
+         patch("builtins.print") as mock_print, \
+         patch("app.calculator.Calculator.set_operation") as mock_set_op, \
+         patch("app.calculator.Calculator.perform_operation", return_value=mock_result):
+
+        calculator_repl()
+
+        # Ensure set_operation() received the correct *type* of operation instance
+        assert mock_set_op.call_count == 1
+        op_arg = mock_set_op.call_args[0][0]
+        assert isinstance(op_arg, operation_class), \
+            f"Expected {operation_class.__name__}, got {type(op_arg).__name__}"
+
+        # Verify the printed result
+        printed_lines = [str(call.args[0]) for call in mock_print.call_args_list if call.args]
+        assert any(expected_print in line for line in printed_lines), \
+            f"Expected print '{expected_print}' not found in {printed_lines}"
