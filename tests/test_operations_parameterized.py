@@ -1,6 +1,7 @@
 import pytest
 from decimal import Decimal, getcontext
 from app.operations import (
+    Abs_difference,
     Addition,
     Percentage,
     Subtraction,
@@ -304,3 +305,30 @@ def test_percentage_invalid_cases(a, b, error, message):
     assert message in str(excinfo.value)
 
 
+# ---------------------------------------------------------
+# Absolute Difference
+# ---------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "a, b, expected",
+    [
+        (Decimal("5"), Decimal("3"), Decimal("2")),              # Normal positive
+        (Decimal("3"), Decimal("5"), Decimal("2")),              # Reverse order
+        (Decimal("-5"), Decimal("-3"), Decimal("2")),            # Both negative
+        (Decimal("-3"), Decimal("-5"), Decimal("2")),            # Reverse negatives
+        (Decimal("5.5"), Decimal("3.3"), Decimal("2.2")),        # Decimal inputs
+        (Decimal("3.3"), Decimal("5.5"), Decimal("2.2")),        # Reversed decimals
+        (Decimal("0"), Decimal("0"), Decimal("0")),              # Both zero
+
+        # --- Edge cases below ---
+        (Decimal("1E-10"), Decimal("0"), Decimal("1E-10")),      # Very small decimal difference
+        (Decimal("1E+10"), Decimal("1E+10"), Decimal("0")),      # Very large equal numbers
+        (Decimal("1E+10"), Decimal("1E+9"), Decimal("9E+9")),    # Very large difference
+        (Decimal("-1E+10"), Decimal("1E+10"), Decimal("2E+10")), # Large negative vs positive
+        (Decimal("123.456"), Decimal("123.456"), Decimal("0")),  # Identical non-integer numbers
+    ],
+)
+def test_abs_difference(a, b, expected):
+    """Test absolute difference with normal and edge cases."""
+    op = Abs_difference()
+    assert op.execute(a, b) == expected

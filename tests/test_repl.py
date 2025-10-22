@@ -265,6 +265,7 @@ def test_calculator_repl_known_exceptions(exception, expected_message):
         ("power", "2", "3", operations.Power, "Result: 8", "Result: 8"),
         ("root", "16", "2", operations.Root, "Result: 4", "Result: 4"),
         ("percentage", "3", "4", operations.Percentage, "Result: 0.12", "Result: 0.12"),
+        ("abs_diff", "10", "4", operations.Abs_difference, "Result: 6", "Result: 6"),
     ],
 )
 def test_calculator_repl_operations(operation, operand1, operand2, operation_class, mock_result, expected_print):

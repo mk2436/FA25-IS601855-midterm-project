@@ -4,6 +4,7 @@ from typing import Any, Dict, Type
 
 from app.exceptions import ValidationError
 from app.operations import (
+    Abs_difference,
     Int_division,
     Modulus,
     Operation,
@@ -350,3 +351,22 @@ class TestPercentage(BaseOperationTest):
             "message": "Percentage cannot be negative",
         },
     }
+
+class TestAbsDifference(BaseOperationTest):
+    """Test Absolute Difference operation."""
+
+    operation_class = Abs_difference
+
+    valid_test_cases = {
+        "positive_numbers": {"a": "10", "b": "3", "expected": "7"},
+        "negative_numbers": {"a": "-10", "b": "-3", "expected": "7"},
+        "mixed_signs": {"a": "-5", "b": "3", "expected": "8"},
+        "zero_difference": {"a": "5", "b": "5", "expected": "0"},
+        "decimals": {"a": "5.5", "b": "3.3", "expected": "2.2"},
+        "large_numbers": {
+            "a": "1e10",
+            "b": "1e9",
+            "expected": "9000000000"
+        },
+    }
+    invalid_test_cases = {}  # Absolute Difference has no invalid cases

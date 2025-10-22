@@ -2,9 +2,8 @@ import pytest
 from decimal import Decimal
 from datetime import datetime
 from app.calculation import Calculation
-from app.exceptions import OperationError
+from app.exceptions import OperationError, ValidationError
 import logging
-from decimal import InvalidOperation
 
 # ------------------------------------------------------------
 # ADDITION TESTS
@@ -240,6 +239,37 @@ def test_percentage_negative_values(operand1, operand2, expected_message):
     """Test that negative values in percentage calculation raise an OperationError."""
     with pytest.raises(OperationError, match=expected_message):
         Calculation(operation="Percentage", operand1=operand1, operand2=operand2)
+
+
+
+
+# ------------------------------------------------------------
+# ABSOLUTE DIFFERENCE TESTS
+# ------------------------------------------------------------
+@pytest.mark.parametrize(
+    "a, b, expected",
+    [
+        (Decimal("5"), Decimal("3"), Decimal("2")),               # Normal positive
+        (Decimal("3"), Decimal("5"), Decimal("2")),               # Reversed positive
+        (Decimal("-5"), Decimal("-3"), Decimal("2")),             # Both negative
+        (Decimal("-3"), Decimal("-5"), Decimal("2")),             # Reverse negatives
+        (Decimal("5.5"), Decimal("3.3"), Decimal("2.2")),         # Decimals
+        (Decimal("3.3"), Decimal("5.5"), Decimal("2.2")),         # Reverse decimals
+        (Decimal("0"), Decimal("0"), Decimal("0")),               # Both zero
+        (Decimal("0"), Decimal("5"), Decimal("5")),               # Zero vs positive
+        (Decimal("5"), Decimal("0"), Decimal("5")),               # Positive vs zero
+        (Decimal("-5"), Decimal("0"), Decimal("5")),              # Negative vs zero
+        (Decimal("0"), Decimal("-5"), Decimal("5")),              # Zero vs negative
+        (Decimal("1E-10"), Decimal("0"), Decimal("1E-10")),       # Very small difference
+        (Decimal("1E+10"), Decimal("1E+9"), Decimal("9E+9")),     # Large numbers
+        (Decimal("-1E+10"), Decimal("1E+10"), Decimal("2E+10")),  # Large neg vs pos
+        (Decimal("123.456"), Decimal("123.456"), Decimal("0")),   # Identical decimals
+    ],
+)
+def test_abs_difference_valid(a, b, expected):
+    """Test valid absolute difference calculations, including edge cases."""
+    calc = Calculation(operation="Abs_difference", operand1=a, operand2=b)
+    assert calc.result == expected
 
 
 # ------------------------------------------------------------
