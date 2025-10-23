@@ -13,6 +13,11 @@ from app.history import AutoSaveObserver
 from app.operations import OperationFactory
 from app.calculator_memento import CalculatorMemento
 from app.logger import LoggingObserver
+from app.ui_color import ColorFormatter
+
+
+# Creating a formatter instance for use in tests
+formatter = ColorFormatter()
 
 
 # ---------------------------
@@ -280,32 +285,29 @@ def test_calculator_repl_exit(mock_print, mock_input):
     with patch('app.calculator.Calculator.save_history') as mock_save_history:
         calculator_repl()
         mock_save_history.assert_called_once()
-        mock_print.assert_any_call("History saved successfully.")
-        mock_print.assert_any_call("Goodbye!")
+        mock_print.assert_any_call(formatter.success("History saved successfully."))
+        mock_print.assert_any_call(formatter.info("Goodbye!"))
 
 @patch('builtins.input', side_effect=['help', 'exit'])
 @patch('builtins.print')
 def test_calculator_repl_help(mock_print, mock_input):
     calculator_repl()
-    mock_print.assert_any_call("\nAvailable commands:")
+    mock_print.assert_any_call(formatter.info("\nAvailable commands:"))
 
 
 @pytest.mark.parametrize(
-    "user_inputs,expected_output",
+    "user_inputs,a,b",
     [
-        (['add', '2', '3', 'exit'], "\nResult: 5")
+        (['add', '2', '3', 'exit'], 2, 3)
     ]
 )
 @patch('builtins.input')
 @patch('builtins.print')
-def test_calculator_repl_addition(mock_print, mock_input, user_inputs, expected_output):
-    # Feed inputs to REPL
+def test_calculator_repl_addition(mock_print, mock_input, user_inputs, a, b):
     mock_input.side_effect = user_inputs
-
-    # Run REPL
     calculator_repl()
 
-    # Assert the exact output was printed
+    expected_output = formatter.result(f"\nResult: {a + b}")
     mock_print.assert_any_call(expected_output)
 
 
