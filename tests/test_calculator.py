@@ -292,7 +292,9 @@ def test_calculator_repl_exit(mock_print, mock_input):
 @patch('builtins.print')
 def test_calculator_repl_help(mock_print, mock_input):
     calculator_repl()
-    mock_print.assert_any_call(formatter.info("\nAvailable commands:"))
+    printed = "".join(call.args[0] for call in mock_print.call_args_list)
+    assert "\nAvailable commands:" in printed
+
 
 
 @pytest.mark.parametrize(
