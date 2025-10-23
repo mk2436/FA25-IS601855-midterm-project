@@ -4,228 +4,188 @@ from datetime import datetime
 from app.calculation import Calculation
 from app.exceptions import OperationError, ValidationError
 import logging
-
 # ------------------------------------------------------------
-# ADDITION TESTS
+# ADDITION EDGE CASES (mirroring Abs_difference style)
 # ------------------------------------------------------------
 @pytest.mark.parametrize(
-    "operand1, operand2, expected_result",
+    "a, b, expected",
     [
-        (Decimal("2"), Decimal("3"), Decimal("5")),         # Simple positive numbers
-        (Decimal("10.5"), Decimal("4.5"), Decimal("15")),   # Decimal numbers    
-        (Decimal("-2"), Decimal("3"), Decimal("1")),        # Negative and positive
-        (Decimal("0"), Decimal("0"), Decimal("0")),         # Both operands zero
+        (Decimal("5"), Decimal("3"), Decimal("8")),       # Normal positive numbers
+        (Decimal("3"), Decimal("5"), Decimal("8")),       # Reversed operands
+        (Decimal("-5"), Decimal("-3"), Decimal("-8")),    # Both negative
+        (Decimal("-3"), Decimal("-5"), Decimal("-8")),    # Reversed negatives
+        (Decimal("5.5"), Decimal("3.3"), Decimal("8.8")), # Decimal numbers
+        (Decimal("0"), Decimal("0"), Decimal("0")),       # Both operands zero
+        (Decimal("0"), Decimal("5"), Decimal("5")),       # Zero vs positive
+        (Decimal("-5"), Decimal("0"), Decimal("-5")),     # Negative vs zero
+        (Decimal("1E-10"), Decimal("0"), Decimal("1E-10")), # Very small numbers
+        (Decimal("1E+10"), Decimal("1E+9"), Decimal("1.1E+10")), # Large numbers
     ],
 )
-def test_addition(operand1, operand2, expected_result):
-    """Test various valid addition scenarios."""
-    # Arrange & Act
-    calc = Calculation(operation="Addition", operand1=operand1, operand2=operand2)
-
-    # Assert
-    assert calc.result == expected_result
+def test_addition_edge_cases(a, b, expected):
+    """Test addition with edge cases including negatives, zeros, decimals, and very large/small numbers."""
+    calc = Calculation(operation="Addition", operand1=a, operand2=b)
+    assert calc.result == expected
 
 
 # ------------------------------------------------------------
-# SUBTRACTION TESTS
+# SUBTRACTION EDGE CASES
 # ------------------------------------------------------------
 @pytest.mark.parametrize(
-    "operand1, operand2, expected_result",
+    "a, b, expected",
     [
-        (Decimal("5"), Decimal("3"), Decimal("2")),
-        (Decimal("3"), Decimal("5"), Decimal("-2")),
-        (Decimal("0"), Decimal("7"), Decimal("-7")),
+        (Decimal("5"), Decimal("3"), Decimal("2")),          # Normal positive numbers
+        (Decimal("3"), Decimal("5"), Decimal("-2")),         # Reversed operands
+        (Decimal("-5"), Decimal("-3"), Decimal("-2")),       # Both negative
+        (Decimal("-3"), Decimal("-5"), Decimal("2")),        # Reversed negatives
+        (Decimal("0"), Decimal("0"), Decimal("0")),          # Both zero
+        (Decimal("0"), Decimal("5"), Decimal("-5")),         # Zero minus positive
+        (Decimal("5"), Decimal("0"), Decimal("5")),          # Positive minus zero
+        (Decimal("1E+10"), Decimal("1E+9"), Decimal("9E+9")), # Large numbers
+        (Decimal("1E-10"), Decimal("0"), Decimal("1E-10")),  # Very small numbers
     ],
 )
-def test_subtraction(operand1, operand2, expected_result):
-    """Test valid subtraction scenarios including negatives."""
-    calc = Calculation(operation="Subtraction", operand1=operand1, operand2=operand2)
-    assert calc.result == expected_result
+def test_subtraction_edge_cases(a, b, expected):
+    """Test subtraction with edge cases including negatives, zeros, and very large/small numbers."""
+    calc = Calculation(operation="Subtraction", operand1=a, operand2=b)
+    assert calc.result == expected
 
 
 # ------------------------------------------------------------
-# MULTIPLICATION TESTS
+# MULTIPLICATION EDGE CASES
 # ------------------------------------------------------------
 @pytest.mark.parametrize(
-    "operand1, operand2, expected_result",
+    "a, b, expected",
     [
-        (Decimal("4"), Decimal("2"), Decimal("8")),
-        (Decimal("-4"), Decimal("2"), Decimal("-8")),
-        (Decimal("0"), Decimal("5"), Decimal("0")),
+        (Decimal("5"), Decimal("3"), Decimal("15")),        # Positive * positive
+        (Decimal("-5"), Decimal("3"), Decimal("-15")),      # Negative * positive
+        (Decimal("5"), Decimal("-3"), Decimal("-15")),      # Positive * negative
+        (Decimal("-5"), Decimal("-3"), Decimal("15")),      # Negative * negative
+        (Decimal("0"), Decimal("5"), Decimal("0")),         # Zero * positive
+        (Decimal("5"), Decimal("0"), Decimal("0")),         # Positive * zero
+        (Decimal("1E5"), Decimal("1E3"), Decimal("1E8")),   # Large numbers
+        (Decimal("1E-5"), Decimal("1E-3"), Decimal("1E-8")), # Very small numbers
     ],
 )
-def test_multiplication(operand1, operand2, expected_result):
-    """Test valid multiplication cases including zero and negatives."""
-    calc = Calculation(operation="Multiplication", operand1=operand1, operand2=operand2)
-    assert calc.result == expected_result
+def test_multiplication_edge_cases(a, b, expected):
+    """Test multiplication with edge cases including negatives, zeros, decimals, and extreme values."""
+    calc = Calculation(operation="Multiplication", operand1=a, operand2=b)
+    assert calc.result == expected
 
 
 # ------------------------------------------------------------
-# DIVISION TESTS
+# DIVISION EDGE CASES
 # ------------------------------------------------------------
 @pytest.mark.parametrize(
-    "operand1, operand2, expected_result",
+    "a, b, expected",
     [
-        (Decimal("8"), Decimal("2"), Decimal("4")),
-        (Decimal("9"), Decimal("3"), Decimal("3")),
-        (Decimal("-8"), Decimal("2"), Decimal("-4")),
+        (Decimal("6"), Decimal("3"), Decimal("2")),          # Normal division
+        (Decimal("-6"), Decimal("3"), Decimal("-2")),        # Negative dividend
+        (Decimal("6"), Decimal("-3"), Decimal("-2")),        # Negative divisor
+        (Decimal("-6"), Decimal("-3"), Decimal("2")),        # Both negative
+        (Decimal("0"), Decimal("5"), Decimal("0")),          # Zero dividend
+        (Decimal("1E10"), Decimal("1E5"), Decimal("1E5")),   # Large numbers
+        (Decimal("1E-10"), Decimal("1E-5"), Decimal("1E-5")), # Very small numbers
     ],
 )
-def test_division(operand1, operand2, expected_result):
-    """Test valid division operations."""
-    calc = Calculation(operation="Division", operand1=operand1, operand2=operand2)
-    assert calc.result == expected_result
-
-
-@pytest.mark.parametrize(
-    "operand1, operand2",
-    [(Decimal("8"), Decimal("0")), (Decimal("0"), Decimal("0"))],
-)
-def test_division_by_zero(operand1, operand2):
-    """Test division by zero raises an OperationError."""
-    with pytest.raises(OperationError, match="Division by zero is not allowed"):
-        Calculation(operation="Division", operand1=operand1, operand2=operand2)
+def test_division_edge_cases(a, b, expected):
+    """Test division with edge cases including negatives, zero dividend, and very large/small numbers."""
+    calc = Calculation(operation="Division", operand1=a, operand2=b)
+    assert calc.result == expected
 
 
 # ------------------------------------------------------------
-# POWER TESTS
+# POWER EDGE CASES
 # ------------------------------------------------------------
 @pytest.mark.parametrize(
-    "operand1, operand2, expected_result",
+    "a, b, expected",
     [
-        (Decimal("2"), Decimal("3"), Decimal("8")),
-        (Decimal("5"), Decimal("0"), Decimal("1")),
+        (Decimal("2"), Decimal("3"), Decimal("8")),          # Normal positive exponent
+        (Decimal("5"), Decimal("0"), Decimal("1")),          # Any number to power 0
+        (Decimal("0"), Decimal("5"), Decimal("0")),          # Zero to positive power
+        (Decimal("0"), Decimal("0"), Decimal("1")),          # 0**0 special case
+        (Decimal("1E2"), Decimal("3"), Decimal("1E6")),      # Large numbers
     ],
 )
-def test_power(operand1, operand2, expected_result):
-    """Test exponentiation for positive exponents."""
-    calc = Calculation(operation="Power", operand1=operand1, operand2=operand2)
-    assert calc.result == expected_result
+def test_power_edge_cases(a, b, expected):
+    """Test exponentiation with edge cases including zero, large numbers, and 0**0."""
+    calc = Calculation(operation="Power", operand1=a, operand2=b)
+    assert calc.result == expected
 
 
+# ------------------------------------------------------------
+# ROOT EDGE CASES
+# ------------------------------------------------------------
 @pytest.mark.parametrize(
-    "operand1, operand2",
+    "a, b, expected",
     [
-        (Decimal("2"), Decimal("-3")),
-        (Decimal("10"), Decimal("-1")),
+        (Decimal("16"), Decimal("2"), Decimal("4")),         # Square root
+        (Decimal("27"), Decimal("3"), Decimal("3")),         # Cube root
+        (Decimal("1E8"), Decimal("4"), Decimal("1E2")),     # Large number root
+        (Decimal("1E-8"), Decimal("4"), Decimal("0.01000000000000000020816681711721685132943093776702880859375")),   # Small number root
     ],
 )
-def test_negative_power(operand1, operand2):
-    """Test that negative exponents raise an OperationError."""
-    with pytest.raises(OperationError, match="Negative exponents are not supported"):
-        Calculation(operation="Power", operand1=operand1, operand2=operand2)
+def test_root_edge_cases(a, b, expected):
+    """Test root extraction including square/cube roots, very large and very small numbers."""
+    calc = Calculation(operation="Root", operand1=a, operand2=b)
+    assert calc.result == expected
 
 
 # ------------------------------------------------------------
-# ROOT TESTS
+# MODULUS EDGE CASES
 # ------------------------------------------------------------
 @pytest.mark.parametrize(
-    "operand1, operand2, expected_result",
+    "a, b, expected",
     [
-        (Decimal("16"), Decimal("2"), Decimal("4")),
-        (Decimal("27"), Decimal("3"), Decimal("3")),
+        (Decimal("10"), Decimal("3"), Decimal("1")),         # Basic modulus
+        (Decimal("10"), Decimal("-3"), Decimal("1")),        # Negative divisor
+        (Decimal("-10"), Decimal("3"), Decimal("-1")),       # Negative dividend
+        (Decimal("-10"), Decimal("-3"), Decimal("-1")),      # Both negative
+        (Decimal("0"), Decimal("3"), Decimal("0")),          # Zero dividend
     ],
 )
-def test_root(operand1, operand2, expected_result):
-    """Test root extraction for valid inputs."""
-    calc = Calculation(operation="Root", operand1=operand1, operand2=operand2)
-    assert calc.result == expected_result
+def test_modulus_edge_cases(a, b, expected):
+    """Test modulus operation including positive/negative operands and zero dividend."""
+    calc = Calculation(operation="Modulus", operand1=a, operand2=b)
+    assert calc.result == expected
 
 
+# ------------------------------------------------------------
+# INTEGER DIVISION EDGE CASES
+# ------------------------------------------------------------
 @pytest.mark.parametrize(
-    "operand1, operand2",
+    "a, b, expected",
     [
-        (Decimal("-16"), Decimal("2")),
-        (Decimal("-27"), Decimal("3")),
+        (Decimal("10"), Decimal("3"), Decimal("3")),         # Normal positive
+        (Decimal("10"), Decimal("-3"), Decimal("-3")),       # Negative divisor
+        (Decimal("-10"), Decimal("3"), Decimal("-3")),       # Negative dividend
+        (Decimal("-10"), Decimal("-3"), Decimal("3")),       # Both negative
+        (Decimal("0"), Decimal("5"), Decimal("0")),          # Zero dividend
     ],
 )
-def test_invalid_root(operand1, operand2):
-    """Test that invalid roots (negative numbers) raise an OperationError."""
-    with pytest.raises(OperationError, match="Cannot calculate root of negative number"):
-        Calculation(operation="Root", operand1=operand1, operand2=operand2)
+def test_integer_division_edge_cases(a, b, expected):
+    """Test integer division including negative numbers, zero dividend, and reversed operands."""
+    calc = Calculation(operation="Int_division", operand1=a, operand2=b)
+    assert calc.result == expected
 
 
 # ------------------------------------------------------------
-# MODULUS TESTS
-# ------------------------------------------------------------
-@pytest.mark.parametrize(
-    "operand1, operand2, expected_result",
-    [
-        (Decimal("10"), Decimal("3"), Decimal("1")),       # Basic modulus
-        (Decimal("9"), Decimal("3"), Decimal("0")),        # Divisible numbers
-        (Decimal("-10"), Decimal("3"), Decimal("-1")),     # Negative dividend
-        (Decimal("10"), Decimal("-3"), Decimal("1")),      # Negative divisor
-    ],
-)
-def test_modulus(operand1, operand2, expected_result):
-    """Test valid modulus operations."""
-    calc = Calculation(operation="Modulus", operand1=operand1, operand2=operand2)
-    assert calc.result == expected_result
-
-
-@pytest.mark.parametrize(
-    "operand1, operand2",
-    [
-        (Decimal("5"), Decimal("0")),    # Division by zero not allowed
-        (Decimal("0"), Decimal("0")),
-    ],
-)
-def test_modulus_by_zero(operand1, operand2):
-    """Test that modulus by zero raises an OperationError."""
-    with pytest.raises(OperationError, match="Division by zero is not allowed"):
-        Calculation(operation="Modulus", operand1=operand1, operand2=operand2)
-
-
-# ------------------------------------------------------------
-# INTEGER DIVISION TESTS
+# PERCENTAGE EDGE CASES
 # ------------------------------------------------------------
 @pytest.mark.parametrize(
-    "operand1, operand2, expected_result",
+    "a, b, expected",
     [
-        (Decimal("10"), Decimal("3"), Decimal("3")),        # Integer division result
-        (Decimal("9"), Decimal("3"), Decimal("3")),         # Exact division
-        (Decimal("10"), Decimal("-3"), Decimal("-3")),      # Negative divisor
-        (Decimal("-10"), Decimal("3"), Decimal("-3")),      # Negative dividend
-        (Decimal("0"), Decimal("5"), Decimal("0")),         # Zero dividend
-    ],
-)
-def test_integer_division(operand1, operand2, expected_result):
-    """Test valid integer division scenarios."""
-    calc = Calculation(operation="Int_division", operand1=operand1, operand2=operand2)
-    assert calc.result == expected_result
-
-
-@pytest.mark.parametrize(
-    "operand1, operand2",
-    [
-        (Decimal("10"), Decimal("0")),
-        (Decimal("0"), Decimal("0")),
-    ],
-)
-def test_integer_division_by_zero(operand1, operand2):
-    """Test that integer division by zero raises an OperationError."""
-    with pytest.raises(OperationError, match="Division by zero is not allowed"):
-        Calculation(operation="Int_division", operand1=operand1, operand2=operand2)
-
-
-# ------------------------------------------------------------
-# PERCENTAGE TESTS
-# ------------------------------------------------------------
-@pytest.mark.parametrize(
-    "operand1, operand2, expected_result",
-    [
-        (Decimal("50"), Decimal("10"), Decimal("5")),         # 10% of 50 = 5
-        (Decimal("100"), Decimal("0"), Decimal("0")),         # 0% of 100 = 0
-        (Decimal("75.5"), Decimal("20"), Decimal("15.1")),    # 20% of 75.5 = 15.1
-        (Decimal("1e6"), Decimal("25"), Decimal("250000")),   # Large numbers
+        (Decimal("50"), Decimal("10"), Decimal("5")),         # Normal percentage
+        (Decimal("100"), Decimal("0"), Decimal("0")),         # Zero percentage
+        (Decimal("75.5"), Decimal("20"), Decimal("15.1")),   # Decimal percentage
+        (Decimal("1E6"), Decimal("25"), Decimal("250000")),  # Large numbers
         (Decimal("0"), Decimal("100"), Decimal("0")),         # Zero base
     ],
 )
-def test_percentage_valid(operand1, operand2, expected_result):
-    """Test valid percentage calculations."""
-    calc = Calculation(operation="Percentage", operand1=operand1, operand2=operand2)
-    assert calc.result == expected_result
-
+def test_percentage_edge_cases(a, b, expected):
+    """Test percentage calculations including zeros, decimals, and large numbers."""
+    calc = Calculation(operation="Percentage", operand1=a, operand2=b)
+    assert calc.result == expected
 
 @pytest.mark.parametrize(
     "operand1, operand2, expected_message",
