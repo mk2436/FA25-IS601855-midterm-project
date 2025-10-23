@@ -40,16 +40,11 @@ def calculator_repl():
 
                 if command == 'help':
                     # Display available commands
-                    print(formatter.info("\nAvailable commands:"))
-                    print(formatter.info("  add, subtract, multiply, divide, power, root, modulus, int_divide, percentage, abs_diff - Perform calculations"))
-                    print(formatter.info("  history - Show calculation history"))
-                    print(formatter.info("  clear - Clear calculation history"))
-                    print(formatter.info("  undo - Undo the last calculation"))
-                    print(formatter.info("  redo - Redo the last undone calculation"))
-                    print(formatter.info("  save - Save calculation history to file"))
-                    print(formatter.info("  load - Load calculation history from file"))
-                    print(formatter.info("  exit - Exit the calculator"))
-                    continue
+                    from app.help_menu import build_help_menu
+
+                    help_text = build_help_menu()
+                    # Use the project's ColorFormatter for consistent styling
+                    print(formatter.info(f"\n{help_text}"))
 
                 if command == 'exit':
                     # Attempt to save history before exiting
