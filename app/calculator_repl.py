@@ -191,15 +191,8 @@ def calculator_repl():
                         # Create the appropriate operation instance using the Factory pattern
                         operation = OperationFactory.create_operation(command)
 
-                        # Check if user wants to queue instead of immediate execution
-                        queue_choice = input(formatter.prompt("Queue this operation? (y/N): ")).lower().strip()
-                        if queue_choice in ('y', 'yes'):
-                            cmd = OperationCommand(operation, a, b)
-                            queue.add(cmd)
-                            print(formatter.success("Operation added to queue"))
-                            continue
-
                         # Wrap it in a Command object and execute via the Calculator immediately
+                        # (Note: to queue operations use the 'queue add' command)
                         cmd = OperationCommand(operation, a, b)
                         result = calc.execute_command(cmd)
 
