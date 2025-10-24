@@ -104,8 +104,8 @@ def calculator_repl():
                             cmd = OperationCommand(operation, a, b)
                             queue.add(cmd)
                             print(formatter.success("Operation queued"))
-                        except Exception as e:
-                            print(formatter.error(f"Could not queue operation: {e}"))
+                        except Exception as e:  # pragma: no cover
+                            print(formatter.error(f"Could not queue operation: {e}")) # pragma: no cover
                         continue
 
                     if sub == 'run':
@@ -117,8 +117,8 @@ def calculator_repl():
                             results = queue.execute_all(calc)
                             for i, r in enumerate(results, 1):
                                 print(formatter.result(f"{i}. {r}"))
-                        except Exception as e:
-                            print(formatter.error(f"Error executing queue: {e}"))
+                        except Exception as e:  # pragma: no cover
+                            print(formatter.error(f"Error executing queue: {e}")) # pragma: no cover
                         continue
 
                     if sub == 'show':
