@@ -49,6 +49,7 @@ def calculator_repl():
                     help_text = build_help_menu()
                     # Use the project's ColorFormatter for consistent styling
                     print(formatter.info(f"\n{help_text}"))
+                    continue
 
                 if command == 'exit':
                     # Attempt to save history before exiting
