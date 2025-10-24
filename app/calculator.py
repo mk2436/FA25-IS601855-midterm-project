@@ -289,38 +289,63 @@ class Calculator:
         """
         Load calculation history from a CSV file using pandas.
 
-        Reads the calculation history from a CSV file and reconstructs the
-        Calculation instances, restoring the calculator's history.
-
+        Validates required columns, coerces numeric types, and rejects malformed data.
         Raises:
-            OperationError: If loading the history fails.
+            OperationError: If loading the history fails or data is invalid.
         """
+        import numpy as np
+
         try:
-            if self.config.history_file.exists():
-                # Read the CSV file into a pandas DataFrame
-                df = pd.read_csv(self.config.history_file)
-                if not df.empty:
-                    # Deserialize each row into a Calculation instance
-                    self.history = [
-                        Calculation.from_dict({
-                            'operation': row['operation'],
-                            'operand1': row['operand1'],
-                            'operand2': row['operand2'],
-                            'result': row['result'],
-                            'timestamp': row['timestamp']
-                        })
-                        for _, row in df.iterrows()
-                    ]
-                    logging.info(f"Loaded {len(self.history)} calculations from history")
-                else:
-                    logging.info("Loaded empty history file")
-            else:
-                # If no history file exists, start with an empty history
+            if not self.config.history_file.exists():
                 logging.info("No history file found - starting with empty history")
+                return
+
+            # Read the CSV file into a pandas DataFrame
+            df = pd.read_csv(self.config.history_file)
+
+            if df.empty:
+                logging.info("Loaded empty history file")
+                return
+
+            # Validate required columns
+            required_cols = {'operation', 'operand1', 'operand2', 'result', 'timestamp'}
+            missing_cols = required_cols - set(df.columns)
+            if missing_cols:
+                raise OperationError(f"Missing required columns in history file: {missing_cols}")
+
+            # Coerce numeric columns to float, forcing invalid values to NaN
+            for col in ['operand1', 'operand2', 'result']:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+
+            # Check for NaN or infinite values
+            if df[['operand1', 'operand2', 'result']].isnull().any().any() or \
+            np.isinf(df[['operand1', 'operand2', 'result']].to_numpy()).any():
+                raise OperationError("History file contains invalid (NaN or infinite) numeric values")
+
+            # Deserialize each row into a Calculation instance
+            self.history = [
+                Calculation.from_dict({
+                    'operation': row['operation'],
+                    'operand1': row['operand1'],
+                    'operand2': row['operand2'],
+                    'result': row['result'],
+                    'timestamp': row['timestamp']
+                })
+                for _, row in df.iterrows()
+            ]
+
+            logging.info(f"Loaded {len(self.history)} calculations from history")
+
+        except pd.errors.EmptyDataError:
+            logging.warning("Empty or invalid CSV file")
+            raise OperationError("History file is empty or corrupted")
+        except pd.errors.ParserError as e:
+            logging.error(f"Malformed CSV file: {e}")
+            raise OperationError(f"Malformed CSV file: {e}")
         except Exception as e:
-            # Log and raise an OperationError if loading fails
             logging.error(f"Failed to load history: {e}")
             raise OperationError(f"Failed to load history: {e}")
+
 
     def get_history_dataframe(self) -> pd.DataFrame:
         """
