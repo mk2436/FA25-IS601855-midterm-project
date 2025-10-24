@@ -12,7 +12,7 @@ class Command(ABC):
     @abstractmethod
     def execute(self, receiver: Any) -> Any:
         """Execute the command against the given receiver (e.g., Calculator)."""
-        raise NotImplementedError()
+        raise NotImplementedError() # pragma: no cover - abstract method
 
 
 class OperationCommand(Command):
