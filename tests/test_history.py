@@ -1,74 +1,143 @@
 import pytest
-from unittest.mock import Mock, patch
-from app.calculation import Calculation
-from app.history import AutoSaveObserver
+import pandas as pd
+from decimal import Decimal
+from unittest.mock import patch
+from pathlib import Path
+import datetime
 from app.calculator import Calculator
 from app.calculator_config import CalculatorConfig
-from app.logger import LoggingObserver 
+from app.exceptions import OperationError
 
-# Sample setup for mock calculation
-calculation_mock = Mock(spec=Calculation)
-calculation_mock.operation = "addition"
-calculation_mock.operand1 = 5
-calculation_mock.operand2 = 3
-calculation_mock.result = 8
 
-# Test cases for LoggingObserver
+@pytest.fixture
+def calculator_temp(tmp_path):
+    """Fixture providing a Calculator with temporary paths."""
+    config = CalculatorConfig(base_dir=tmp_path)
+    return Calculator(config=config)
 
-@patch('logging.info')
-def test_logging_observer_logs_calculation(logging_info_mock):
-    observer = LoggingObserver()
-    observer.update(calculation_mock)
-    logging_info_mock.assert_called_once_with(
-        "Calculation performed: addition (5, 3) = 8"
-    )
 
-def test_logging_observer_no_calculation():
-    observer = LoggingObserver()
-    with pytest.raises(AttributeError):
-        observer.update(None)  # Passing None should raise an exception as there's no calculation
+# --------------------------------------------------------
+# Case 1: File does not exist → empty history
+# --------------------------------------------------------
+@patch("app.calculator.Path.exists", return_value=False)
+def test_load_history_file_not_found(mock_exists, calculator_temp):
+    calculator_temp.load_history()
+    assert calculator_temp.history == []
 
-# Test cases for AutoSaveObserver
 
-def test_autosave_observer_triggers_save():
-    calculator_mock = Mock(spec=Calculator)
-    calculator_mock.config = Mock(spec=CalculatorConfig)
-    calculator_mock.config.auto_save = True
-    observer = AutoSaveObserver(calculator_mock)
-    
-    observer.update(calculation_mock)
-    calculator_mock.save_history.assert_called_once()
+# --------------------------------------------------------
+# Case 2: Empty CSV file → log info & empty history
+# --------------------------------------------------------
+@patch("app.calculator.pd.read_csv", return_value=pd.DataFrame())
+@patch("app.calculator.Path.exists", return_value=True)
+@patch("app.calculator.logging.info")
+def test_load_history_empty_file(mock_info, mock_exists, mock_read_csv, calculator_temp):
+    calculator_temp.load_history()
+    mock_info.assert_called_once_with("Loaded empty history file")
+    assert calculator_temp.history == []
 
-@patch('logging.info')
-def test_autosave_observer_logs_autosave(logging_info_mock):
-    calculator_mock = Mock(spec=Calculator)
-    calculator_mock.config = Mock(spec=CalculatorConfig)
-    calculator_mock.config.auto_save = True
-    observer = AutoSaveObserver(calculator_mock)
-    
-    observer.update(calculation_mock)
-    logging_info_mock.assert_called_once_with("History auto-saved")
 
-def test_autosave_observer_does_not_trigger_save_when_disabled():
-    calculator_mock = Mock(spec=Calculator)
-    calculator_mock.config = Mock(spec=CalculatorConfig)
-    calculator_mock.config.auto_save = False
-    observer = AutoSaveObserver(calculator_mock)
-    
-    observer.update(calculation_mock)
-    calculator_mock.save_history.assert_not_called()
+# --------------------------------------------------------
+# Case 3: Valid CSV → history correctly loaded
+# --------------------------------------------------------
+@patch("app.calculator.pd.read_csv")
+@patch("app.calculator.Path.exists", return_value=True)
+def test_load_history_valid(mock_exists, mock_read_csv, calculator_temp):
+    mock_read_csv.return_value = pd.DataFrame({
+        "operation": ["Addition", "Multiplication"],
+        "operand1": ["2", "3"],
+        "operand2": ["3", "4"],
+        "result": ["5", "12"],
+        "timestamp": [datetime.datetime.now().isoformat()] * 2
+    })
 
-# Additional negative test cases for AutoSaveObserver
+    calculator_temp.load_history()
 
-def test_autosave_observer_invalid_calculator():
-    with pytest.raises(TypeError):
-        AutoSaveObserver(None)  # Passing None should raise a TypeError
+    # Verify correct length and types
+    assert len(calculator_temp.history) == 2
+    first_entry = calculator_temp.history[0]
+    assert first_entry.operation == "Addition"
+    assert first_entry.operand1 == Decimal("2")
+    assert first_entry.operand2 == Decimal("3")
+    assert first_entry.result == Decimal("5")
 
-def test_autosave_observer_no_calculation():
-    calculator_mock = Mock(spec=Calculator)
-    calculator_mock.config = Mock(spec=CalculatorConfig)
-    calculator_mock.config.auto_save = True
-    observer = AutoSaveObserver(calculator_mock)
-    
-    with pytest.raises(AttributeError):
-        observer.update(None)  # Passing None should raise an exception
+
+# --------------------------------------------------------
+# Case 4: Missing required columns → OperationError
+# --------------------------------------------------------
+@patch("app.calculator.pd.read_csv")
+@patch("app.calculator.Path.exists", return_value=True)
+def test_load_history_missing_columns(mock_exists, mock_read_csv, calculator_temp):
+    mock_read_csv.return_value = pd.DataFrame({
+        "op": ["Add"],  # Invalid schema
+        "operand1": ["2"],
+        "operand2": ["3"],
+        "result": ["5"]
+    })
+
+    with pytest.raises(OperationError):
+        calculator_temp.load_history()
+
+
+# --------------------------------------------------------
+# Case 5: pd.read_csv throws → OperationError with message
+# --------------------------------------------------------
+@patch("app.calculator.pd.read_csv", side_effect=Exception("File read error"))
+@patch("app.calculator.Path.exists", return_value=True)
+@patch("app.calculator.logging.error")
+def test_load_history_read_failure(mock_log_error, mock_exists, mock_read_csv, calculator_temp):
+    with pytest.raises(OperationError, match="File read error"):
+        calculator_temp.load_history()
+    mock_log_error.assert_called()
+    logged_message = str(mock_log_error.call_args[0][0])
+    assert "Failed to load history" in logged_message
+    assert "File read error" in logged_message
+
+
+# --------------------------------------------------------
+# Case 6: Mixed valid and invalid rows → partial load
+# --------------------------------------------------------
+
+@patch("app.calculator.pd.read_csv")
+@patch("app.calculator.Path.exists", return_value=True)
+def test_load_history_partial_valid(mock_exists, mock_read_csv, calculator_temp):
+    # Mixed valid and invalid data
+    mock_read_csv.return_value = pd.DataFrame({
+        "operation": ["Addition", None],
+        "operand1": ["2", "bad"],
+        "operand2": ["3", "data"],
+        "result": ["5", None],
+        "timestamp": [datetime.datetime.now().isoformat()] * 2
+    })
+
+    # Expect OperationError due to invalid numeric values
+    with pytest.raises(OperationError, match="History file contains invalid"):
+        calculator_temp.load_history()
+
+
+
+
+# --------------------------------------------------------
+# Case: pd.read_csv raises EmptyDataError
+# --------------------------------------------------------
+@patch("app.calculator.pd.read_csv", side_effect=pd.errors.EmptyDataError)
+@patch("app.calculator.Path.exists", return_value=True)  # Ensure file is seen as existing
+def test_load_history_empty_data_error(mock_exists, mock_read_csv, calculator_temp):
+    with pytest.raises(OperationError, match="History file is empty or corrupted"):
+        calculator_temp.load_history()
+
+
+# --------------------------------------------------------
+# Case: pd.read_csv raises ParserError
+# --------------------------------------------------------
+@patch("app.calculator.pd.read_csv", side_effect=pd.errors.ParserError("bad CSV"))
+@patch("app.calculator.Path.exists", return_value=True)
+@patch("app.calculator.logging.error")
+def test_load_history_parser_error(mock_log_error, mock_exists, mock_read_csv, calculator_temp):
+    with pytest.raises(OperationError, match="Malformed CSV file: bad CSV"):
+        calculator_temp.load_history()
+
+    mock_log_error.assert_called()
+    logged_message = str(mock_log_error.call_args[0][0])
+    assert "Malformed CSV file" in logged_message
+    assert "bad CSV" in logged_message
