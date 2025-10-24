@@ -1,16 +1,41 @@
+"""
+tests/test_help_menu.py
+
+Unit and integration tests for the Help Menu system using the Decorator pattern.
+
+These tests verify:
+- BasicHelp outputs core static help lines correctly.
+- OperationsHelpDecorator dynamically appends operations from OperationFactory.
+- Decorator chaining works correctly at multiple levels.
+- build_help_menu() integrates decorators and operation registry properly.
+- Edge cases, idempotence, and registry safety are handled.
+- Output formatting, indentation, and placeholder text behave as expected.
+"""
+
 import pytest
 from app.help_menu import BasicHelp, OperationsHelpDecorator, build_help_menu, HelpDecorator
 from app.operations import OperationFactory
 
 
+# ----------------------------------------------------------------------
+# Helper: _norm
+# ----------------------------------------------------------------------
+# Normalizes whitespace in strings to single spaces for stable assertion
+# comparisons across multi-line help text.
+# ----------------------------------------------------------------------
 def _norm(s: str) -> str:
     """Normalize whitespace in a string to single spaces for stable comparisons."""
     return " ".join(s.split())
 
 
+# ----------------------------------------------------------------------
+# Fixture: reset_operations_registry
+# ----------------------------------------------------------------------
+# Ensures OperationFactory._operations is cleared before and restored after
+# each test, preventing cross-test contamination.
+# ----------------------------------------------------------------------
 @pytest.fixture(autouse=True)
 def reset_operations_registry():
-    """Ensure OperationFactory._operations is reset cleanly for each test."""
     original_ops = OperationFactory._operations.copy()
     OperationFactory._operations.clear()
     yield
@@ -18,10 +43,11 @@ def reset_operations_registry():
     OperationFactory._operations.update(original_ops)
 
 
-# --------------------------------------------------------------------
-# BASIC HELP PARAMETERIZED TESTS
-# --------------------------------------------------------------------
-
+# ----------------------------------------------------------------------
+# BASIC HELP TESTS
+# ----------------------------------------------------------------------
+# Verify static help menu rendering: content, structure, indentation, and placeholders.
+# ----------------------------------------------------------------------
 @pytest.mark.parametrize(
     "expected_substring",
     [
@@ -70,10 +96,11 @@ def test_basic_help_indentation(section_prefix):
             f"Line not properly indented: {line}"
 
 
-# --------------------------------------------------------------------
-# OPERATIONS DECORATOR PARAMETERIZED TESTS
-# --------------------------------------------------------------------
-
+# ----------------------------------------------------------------------
+# OPERATIONS HELP DECORATOR TESTS
+# ----------------------------------------------------------------------
+# Test dynamic help rendering from OperationFactory, including edge cases.
+# ----------------------------------------------------------------------
 @pytest.mark.parametrize(
     "ops_dict",
     [
@@ -125,10 +152,12 @@ def test_operations_help_double_decorator_idempotence(ops_dict, expected_count):
     assert rendered.count(desc) == expected_count
 
 
-# --------------------------------------------------------------------
-# DECORATOR CHAINING PARAMETERIZED TESTS
-# --------------------------------------------------------------------
-
+# ----------------------------------------------------------------------
+# DECORATOR CHAINING TESTS
+# ----------------------------------------------------------------------
+# Verify that multiple layers of OperationsHelpDecorator and HelpDecorator
+# correctly aggregate help content.
+# ----------------------------------------------------------------------
 @pytest.mark.parametrize(
     "ops_dict, decorator_chain_depth",
     [
@@ -151,10 +180,12 @@ def test_decorator_chaining_multiple_wrappers(ops_dict, decorator_chain_depth):
     assert "Available commands:" in result
 
 
-# --------------------------------------------------------------------
-# BUILD HELP MENU PARAMETERIZED INTEGRATION TESTS
-# --------------------------------------------------------------------
-
+# ----------------------------------------------------------------------
+# BUILD HELP MENU INTEGRATION TESTS
+# ----------------------------------------------------------------------
+# Full integration of decorators with OperationFactory registry using
+# build_help_menu() for various operation sets and edge cases.
+# ----------------------------------------------------------------------
 @pytest.mark.parametrize(
     "operations_dict",
     [
@@ -235,6 +266,118 @@ def test_build_help_menu_registry_safety(ops_dict):
 )
 def test_help_menu_always_ends_with_exit(ops_dict):
     """Help menu should always end with the exit command line."""
+    OperationFactory._operations = ops_dict.copy()
+    result = build_help_menu()
+    assert result.strip().endswith("exit        - Exit the calculator")
+
+
+# ----------------------------------------------------------------------
+# ADDITIONAL EDGE CASE TESTS
+# ----------------------------------------------------------------------
+# Test special characters in operation names, empty DESCRIPTION/doc,
+# long names/descriptions, mixed-case names, nested decorators, placeholder
+# replacement, and exit line position.
+# ----------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "ops_dict",
+    [
+        {"add 123": type("AddOp", (), {"DESCRIPTION": "Adds numbers"})},
+        {"sub-ops": type("SubOp", (), {"DESCRIPTION": "Subtracts numbers"})},
+        {"√root": type("RootOp", (), {"DESCRIPTION": "Root operation"})},
+    ],
+)
+def test_operations_help_special_char_names(ops_dict):
+    """Ensure operations with special characters render correctly."""
+    OperationFactory._operations = ops_dict.copy()
+    rendered = OperationsHelpDecorator(BasicHelp()).render()
+    for name, cls in ops_dict.items():
+        assert name in rendered
+        assert cls.DESCRIPTION in rendered
+
+
+
+@pytest.mark.parametrize(
+    "ops_dict",
+    [
+        {"empty_desc": type("EmptyOp", (), {"DESCRIPTION": ""})},
+        {"empty_doc": type("DocOp", (), {"__doc__": ""})},
+    ],
+)
+def test_operations_help_empty_description_or_doc(ops_dict):
+    """Fallback to class name when DESCRIPTION and docstring are empty."""
+    OperationFactory._operations = ops_dict.copy()
+    rendered = OperationsHelpDecorator(BasicHelp()).render()
+    for name, cls in ops_dict.items():
+        assert name in rendered
+        assert cls.__name__ in rendered  # should fallback to class name
+
+
+
+def test_operations_help_long_names_and_descriptions():
+    """Test rendering of operations with extremely long names and descriptions."""
+    OperationFactory._operations = {
+        "super_long_operation_name_exceeding_typical_length": type(
+            "LongOp", (), {"DESCRIPTION": "A very long description to test formatting and line wrapping in help menu output"}
+        )
+    }
+    rendered = OperationsHelpDecorator(BasicHelp()).render()
+    assert "super_long_operation_name_exceeding_typical_length" in rendered
+    assert "A very long description to test formatting" in rendered
+
+
+def test_operations_help_mixed_case_names():
+    OperationFactory._operations = {
+        "ADD": type("AddOp", (), {"DESCRIPTION": "Uppercase add"}),
+        "add": type("AddOp", (), {"DESCRIPTION": "Lowercase add"})
+    }
+    rendered = OperationsHelpDecorator(BasicHelp()).render()
+    assert "ADD" in rendered
+    assert "add" in rendered
+    assert "Uppercase add" in rendered
+    assert "Lowercase add" in rendered
+
+
+def test_operations_help_empty_registry_multiple_decorators():
+    OperationFactory._operations.clear()
+    component = BasicHelp()
+    component = OperationsHelpDecorator(OperationsHelpDecorator(component))
+    rendered = component.render()
+    assert "(no operations available)" in rendered
+    assert "<operations>" not in rendered
+
+
+def test_operations_help_nested_decorators_mixed_content():
+    OperationFactory._operations = {
+        "op1": type("Op1", (), {"DESCRIPTION": "Desc1"}),
+        "op2": type("Op2", (), {"__doc__": "Doc2"}),
+        "op3": type("Op3", (), {})  # fallback to class name
+    }
+    component = BasicHelp()
+    for _ in range(3):
+        component = OperationsHelpDecorator(component)
+    rendered = HelpDecorator(component).render()
+
+    assert "op1" in rendered and "Desc1" in rendered
+    assert "op2" in rendered and "Doc2" in rendered
+    assert "op3" in rendered and "Op3" in rendered
+
+
+def test_operations_help_placeholder_replacement():
+    OperationFactory._operations = {}
+    rendered = OperationsHelpDecorator(BasicHelp()).render()
+    assert "<operations>" not in rendered
+    assert "(no operations available)" in rendered
+
+
+@pytest.mark.parametrize(
+    "ops_dict",
+    [
+        {"add": type("AddOp", (), {"DESCRIPTION": "Adds"})},
+        {},  # empty registry
+    ],
+)
+def test_help_menu_exit_always_last(ops_dict):
     OperationFactory._operations = ops_dict.copy()
     result = build_help_menu()
     assert result.strip().endswith("exit        - Exit the calculator")

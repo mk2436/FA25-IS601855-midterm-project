@@ -13,7 +13,9 @@ calculation_mock.operand1 = 5
 calculation_mock.operand2 = 3
 calculation_mock.result = 8
 
-# Test cases for LoggingObserver
+# -----------------------
+# LoggingObserver Tests
+# -----------------------
 
 @patch('logging.info')
 def test_logging_observer_logs_calculation(logging_info_mock):
@@ -28,7 +30,35 @@ def test_logging_observer_no_calculation():
     with pytest.raises(AttributeError):
         observer.update(None)  # Passing None should raise an exception as there's no calculation
 
-# Test cases for AutoSaveObserver
+
+
+@pytest.mark.parametrize(
+    "operation, operand1, operand2, result, expected_log",
+    [
+        ("add", 1, 2, 3, "Calculation performed: add (1, 2) = 3"),
+        ("sub", 5, 3, 2, "Calculation performed: sub (5, 3) = 2"),
+        ("mul", None, 5, None, "Calculation performed: mul (None, 5) = None"),
+        ("", 0, 0, 0, "Calculation performed:  (0, 0) = 0"),
+        ("@#$%", -1, 1, 0, "Calculation performed: @#$% (-1, 1) = 0"),
+    ]
+)
+def test_logging_observer_parameterized(operation, operand1, operand2, result, expected_log):
+    calc_mock = Mock(spec=Calculation)
+    calc_mock.operation = operation
+    calc_mock.operand1 = operand1
+    calc_mock.operand2 = operand2
+    calc_mock.result = result
+
+    observer = LoggingObserver()
+    with patch("logging.info") as logging_info_mock:
+        observer.update(calc_mock)
+        logging_info_mock.assert_called_once_with(expected_log)
+
+
+# -----------------------
+# AutoSaveObserver Tests
+# -----------------------
+
 
 def test_autosave_observer_triggers_save():
     calculator_mock = Mock(spec=Calculator)
@@ -57,6 +87,59 @@ def test_autosave_observer_does_not_trigger_save_when_disabled():
     
     observer.update(calculation_mock)
     calculator_mock.save_history.assert_not_called()
+
+@pytest.mark.parametrize(
+    "auto_save_enabled, save_side_effect, expected_calls, log_expected",
+    [
+        (True, None, 1, "History auto-saved"),  # Normal auto-save
+        (True, Exception("Save failed"), 1, None),  # Exception during save
+        (False, None, 0, None),  # Auto-save disabled
+    ]
+)
+def test_autosave_observer_parameterized(auto_save_enabled, save_side_effect, expected_calls, log_expected):
+    calculator_mock = Mock(spec=Calculator)
+    calculator_mock.config = Mock(spec=CalculatorConfig)
+    calculator_mock.config.auto_save = auto_save_enabled
+    calculator_mock.save_history.side_effect = save_side_effect
+
+    observer = AutoSaveObserver(calculator_mock)
+
+    with patch("logging.info") as logging_info_mock:
+        if save_side_effect:
+            with pytest.raises(Exception, match="Save failed"):
+                observer.update(Mock(spec=Calculation))
+        else:
+            observer.update(Mock(spec=Calculation))
+
+        assert calculator_mock.save_history.call_count == expected_calls
+        if log_expected:
+            logging_info_mock.assert_called_once_with(log_expected)
+        else:
+            logging_info_mock.assert_not_called()
+
+
+# -----------------------
+# Invalid constructor / update tests
+# -----------------------
+
+
+@pytest.mark.parametrize(
+    "observer_class, init_arg, update_arg, expected_exception",
+    [
+        (AutoSaveObserver, None, Mock(), TypeError),  # Passing None -> TypeError
+        (LoggingObserver, None, None, TypeError),  # LoggingObserver() cannot take arguments
+    ]
+)
+def test_observer_invalid_cases(observer_class, init_arg, update_arg, expected_exception):
+    if init_arg is None:
+        with pytest.raises(expected_exception):
+            observer_class(init_arg)
+    else:
+        observer = observer_class(init_arg)
+        with pytest.raises(expected_exception):
+            observer.update(update_arg)
+
+
 
 # Additional negative test cases for AutoSaveObserver
 

@@ -1,3 +1,19 @@
+"""
+tests/test_calculator_repl.py
+
+Unit and integration tests for the Calculator REPL (Read-Eval-Print Loop).
+
+These tests cover:
+- Basic command handling: help, exit, unknown commands, cancel.
+- Arithmetic operations with valid operands.
+- Undo/redo behavior, including empty history cases.
+- History display, clear, save, and load functionality.
+- Handling of exceptions: ValidationError, OperationError.
+- Queue command functionality: add, run, show, clear, cancel, unknown operations.
+- Edge cases: EOFError, empty input, mixed case commands, special characters.
+- Verification that printed output matches expected messages.
+"""
+
 import pytest
 from unittest.mock import patch
 from app.calculator_repl import calculator_repl
@@ -5,11 +21,20 @@ from app.exceptions import ValidationError, OperationError
 from app import operations  # import the operation classes
 
 
+# ----------------------------------------------------------------------
+# REPL BASIC COMMANDS TESTS
+# ----------------------------------------------------------------------
+# Tests handling of help, exit, undo/redo, save/load errors,
+# unknown commands, cancel, EOFError, and empty input.
+# ----
+
 @pytest.mark.parametrize(
     "user_inputs, expected_prints",
     [
         # help command
         (["help", "exit"], ["Available commands:", "Goodbye!"]),
+        (["HELP", "Exit"], ["Available commands:", "Goodbye!"]),
+
         # undo with nothing to undo
         (["undo", "exit"], ["Nothing to undo", "Goodbye!"]),
         # redo with nothing to redo
@@ -24,6 +49,12 @@ from app import operations  # import the operation classes
         (["add", "cancel", "exit"], ["Operation cancelled", "Goodbye!"]),
         # Ctrl+D / EOFError simulation
         (["EOFError"], ["Input terminated. Exiting..."]),
+
+        # empty input
+        (["", "exit"], ["Unknown command", "Goodbye!"]),
+        (["    ", "exit"], ["Unknown command", "Goodbye!"]),
+
+
     ]
 )
 def test_calculator_repl(user_inputs, expected_prints):
@@ -53,6 +84,13 @@ def test_calculator_repl(user_inputs, expected_prints):
                 f"Expected '{expected}' not found in printed lines: {printed}"
 
 
+
+
+# ----------------------------------------------------------------------
+# REPL HISTORY DISPLAY TESTS
+# ----------------------------------------------------------------------
+# Tests empty, single-entry, and multi-entry history display.
+# ----------------------------------------------------------------------
 @pytest.mark.parametrize(
     "user_inputs, expected_prints, history_list",
     [
@@ -86,6 +124,13 @@ def test_calculator_repl_history_block(user_inputs, expected_prints, history_lis
                 f"Expected '{expected}' not found in printed lines: {printed_lines}"
 
 
+# ----------------------------------------------------------------------
+# REPL HISTORY CLEAR TEST
+# ----------------------------------------------------------------------
+# Verify REPL clears calculation history and prints confirmation.
+# ----------------------------------------------------------------------
+
+
 @pytest.mark.parametrize(
     "user_inputs, expected_prints",
     [
@@ -111,6 +156,15 @@ def test_calculator_repl_clear_block(user_inputs, expected_prints):
         for expected in expected_prints:
             assert any(expected in line for line in printed_lines), \
                 f"Expected '{expected}' not found in printed lines: {printed_lines}"
+
+
+
+
+# ----------------------------------------------------------------------
+# REPL UNDO/REDO TESTS
+# ----------------------------------------------------------------------
+# Verify undo/redo commands print correct messages based on availability.
+# ----------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -165,6 +219,19 @@ def test_calculator_repl_redo_block(user_inputs, redo_return, expected_prints):
                 f"Expected '{expected}' not found in printed lines: {printed_lines}"
 
 
+
+
+
+
+
+
+# ----------------------------------------------------------------------
+# REPL SAVE/LOAD HISTORY TESTS
+# ----------------------------------------------------------------------
+# Verify REPL prints correct success messages when save/load history.
+# ----------------------------------------------------------------------
+
+
 def test_calculator_repl_save_block_success():
     user_inputs = ["save", "exit"]
 
@@ -207,6 +274,12 @@ def test_calculator_repl_load_block_success():
             f"'History loaded successfully' not found in printed lines: {printed_lines}"
 
 
+# ----------------------------------------------------------------------
+# REPL OPERATION CANCELLATION TEST
+# ----------------------------------------------------------------------
+# Verify REPL prints 'Operation cancelled' when user cancels input.
+# ----------------------------------------------------------------------
+
 def test_calculator_repl_cancel_second_operand():
     # Simulate user entering an operation, then first number, then 'cancel' for second number, then exit
     user_inputs = ["add", "10", "cancel", "exit"]
@@ -225,6 +298,17 @@ def test_calculator_repl_cancel_second_operand():
         assert any("Operation cancelled" in line for line in printed_lines), \
             f"'Operation cancelled' not found in printed lines: {printed_lines}"
         
+
+
+
+# ----------------------------------------------------------------------
+# REPL KNOWN EXCEPTIONS TEST
+# ----------------------------------------------------------------------
+# Verify REPL prints correct error messages for known exceptions
+# such as ValidationError and OperationError.
+# ----------------------------------------------------------------------
+
+
 
 @pytest.mark.parametrize(
     "exception, expected_message",
@@ -251,6 +335,16 @@ def test_calculator_repl_known_exceptions(exception, expected_message):
             f"Expected '{expected_message}' not found in printed lines: {printed_lines}"
         
 
+
+
+
+
+# ----------------------------------------------------------------------
+# REPL ARITHMETIC OPERATIONS TESTS
+# ----------------------------------------------------------------------
+# Verify valid arithmetic operations trigger correct perform_operation
+# and output, and correct operation instances are passed to set_operation.
+# ----------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -295,9 +389,13 @@ def test_calculator_repl_operations(operation, operand1, operand2, operation_cla
 
 
 
-import pytest
-from unittest.mock import patch
-from app.calculator_repl import calculator_repl
+
+# ----------------------------------------------------------------------
+# REPL QUEUE COMMANDS TESTS
+# ----------------------------------------------------------------------
+# Thoroughly test REPL queue commands using actual operation classes.
+# Covers: add, run, show, clear, cancel, unknown operation, and empty queue.
+# ----------------------------------------------------------------------
 
 @pytest.mark.parametrize(
     "user_inputs, expected_prints",
