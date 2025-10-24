@@ -292,3 +292,86 @@ def test_calculator_repl_operations(operation, operand1, operand2, operation_cla
         printed_lines = [str(call.args[0]) for call in mock_print.call_args_list if call.args]
         assert any(expected_print in line for line in printed_lines), \
             f"Expected print '{expected_print}' not found in {printed_lines}"
+
+
+
+import pytest
+from unittest.mock import patch
+from app.calculator_repl import calculator_repl
+
+@pytest.mark.parametrize(
+    "user_inputs, expected_prints",
+    [
+        # queue add a valid operation and run
+        (["queue add", "add", "4", "7", "queue run", "exit"],
+         ["Operation queued", "1. 11", "History saved successfully", "Goodbye!"]),
+
+        # queue add multiple operations and run
+        (["queue add", "add", "1", "3", "queue add", "multiply", "2", "5", "queue run", "exit"],
+         ["Operation queued", "Operation queued", "1. 4", "2. 10", "History saved successfully", "Goodbye!"]),
+
+        # queue run with empty queue
+        (["queue run", "exit"],
+         ["Queue is empty", "History saved successfully", "Goodbye!"]),
+
+        # queue show with one operation
+        (["queue add", "add", "9", "1", "queue show", "exit"],
+         ["Operation queued", "1. Addition(9, 1)", "History saved successfully", "Goodbye!"]),
+
+        # queue show with empty queue
+        (["queue show", "exit"],
+         ["Queue is empty", "History saved successfully", "Goodbye!"]),
+
+        # queue clear with operations
+        (["queue add", "add", "7", "3", "queue clear", "queue show", "exit"],
+         ["Operation queued", "Queue cleared", "Queue is empty", "History saved successfully", "Goodbye!"]),
+
+        # queue incomplete command
+        (["queue", "exit"],
+         ["Queue commands: add, run, show, clear", "History saved successfully", "Goodbye!"]),
+
+        # queue clear with empty queue
+        (["queue clear", "exit"],
+         ["Queue cleared", "History saved successfully", "Goodbye!"]),
+
+        # queue add cancelled at operation name
+        (["queue add", "cancel", "exit"],
+         ["Queue add cancelled", "Goodbye!"]),
+
+        # queue add cancelled at first operand
+        (["queue add", "add", "cancel", "exit"],
+         ["Queue add cancelled", "Goodbye!"]),
+
+        # queue add cancelled at second operand
+        (["queue add", "add", "5", "cancel", "exit"],
+         ["Queue add cancelled", "Goodbye!"]),
+
+        # queue add unknown operation
+        (["queue add", "foobar", "exit"],
+         ["Unknown operation: foobar", "Goodbye!"]),
+    ],
+)
+def test_calculator_repl_queue_commands_real_operations(user_inputs, expected_prints):
+    """
+    Thoroughly test REPL queue commands using actual operation classes.
+    Covers: add, run, show, clear, cancel, unknown operation, and empty queue.
+    """
+    with patch("builtins.input", side_effect=user_inputs), \
+         patch("builtins.print") as mock_print:
+
+        # Patch Calculator save/load to avoid file operations
+        with patch("app.calculator.Calculator.save_history"), \
+             patch("app.calculator.Calculator.load_history"):
+
+            try:
+                calculator_repl()
+            except (SystemExit, EOFError):
+                pass
+
+    printed_lines = [str(call.args[0]).strip() for call in mock_print.call_args_list if call.args]
+
+    # Ensure all expected prints are in the output
+    for expected in expected_prints:
+        assert any(expected in line for line in printed_lines), \
+            f"Expected '{expected}' not found in printed lines: {printed_lines}"
+

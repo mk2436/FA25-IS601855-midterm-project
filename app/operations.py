@@ -70,6 +70,7 @@ class Addition(Operation):
 
     Performs the addition of two numbers.
     """
+    DESCRIPTION = "Add two numbers"
 
     def execute(self, a: Decimal, b: Decimal) -> Decimal:
         """
@@ -92,6 +93,7 @@ class Subtraction(Operation):
 
     Performs the subtraction of one number from another.
     """
+    DESCRIPTION = "Subtract second number from first"
 
     def execute(self, a: Decimal, b: Decimal) -> Decimal:
         """
@@ -114,6 +116,7 @@ class Multiplication(Operation):
 
     Performs the multiplication of two numbers.
     """
+    DESCRIPTION = "Multiply two numbers"
 
     def execute(self, a: Decimal, b: Decimal) -> Decimal:
         """
@@ -136,6 +139,7 @@ class Division(Operation):
 
     Performs the division of one number by another.
     """
+    DESCRIPTION = "Divide first number by second (error on zero)"
 
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         """
@@ -175,6 +179,7 @@ class Power(Operation):
 
     Raises one number to the power of another.
     """
+    DESCRIPTION = "Raise base to exponent (no negative exponents)"
 
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         """
@@ -214,6 +219,7 @@ class Root(Operation):
 
     Calculates the nth root of a number.
     """
+    DESCRIPTION = "Calculate the nth root of a number"
 
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         """
@@ -255,6 +261,7 @@ class Modulus(Operation):
 
     Calculates the modulus (remainder) of one number divided by another.
     """
+    DESCRIPTION = "Compute remainder of division"
 
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         """
@@ -293,6 +300,7 @@ class Int_division(Operation):
 
     Performs the integer division of one number by another.
     """
+    DESCRIPTION = "Integer division (floor/truncate quotient)"
 
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         """
@@ -332,6 +340,7 @@ class Percentage(Operation):
 
     Calculates the percentage of a number.
     """
+    DESCRIPTION = "Calculate (a * b) / 100 (percentage of a)"
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         """
         Validate operands for percentage operation.
@@ -369,6 +378,7 @@ class Abs_difference(Operation):
 
     Calculates the absolute difference between two numbers.
     """
+    DESCRIPTION = "Absolute difference between two numbers"
 
     def execute(self, a: Decimal, b: Decimal) -> Decimal:
         """

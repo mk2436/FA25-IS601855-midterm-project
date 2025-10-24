@@ -10,6 +10,7 @@ from app.exceptions import OperationError, ValidationError
 from app.history import AutoSaveObserver
 from app.logger import LoggingObserver
 from app.operations import OperationFactory
+from app.commands import OperationCommand, CommandQueue
 from app.ui_color import ColorFormatter
 
 
@@ -31,6 +32,9 @@ def calculator_repl():
         # Initialise Color Formatter Instances
         formatter = ColorFormatter()
 
+        # Initialize a command queue for batching/enqueuing operations
+        queue = CommandQueue()
+
         print(formatter.success("Calculator started. Type 'help' for commands."))
 
         while True:
@@ -45,6 +49,7 @@ def calculator_repl():
                     help_text = build_help_menu()
                     # Use the project's ColorFormatter for consistent styling
                     print(formatter.info(f"\n{help_text}"))
+                    continue
 
                 if command == 'exit':
                     # Attempt to save history before exiting
@@ -66,6 +71,70 @@ def calculator_repl():
                         for i, entry in enumerate(history, 1):
                             print(formatter.info(f"{i}. {entry}"))
                     continue
+
+                # Queue management commands
+                if command.startswith('queue'):
+                    parts = command.split()
+                    # Usage: queue add | queue run | queue show | queue clear
+                    if len(parts) == 1:
+                        print(formatter.info("Queue commands: add, run, show, clear"))
+                        continue
+
+                    sub = parts[1]
+                    if sub == 'add':
+                        # Interactive add: ask for operation and operands
+                        op_name = input(formatter.prompt("Operation name: ")).strip()
+                        if op_name.lower() == 'cancel':
+                            print(formatter.info("Queue add cancelled"))
+                            continue
+                        if op_name not in OperationFactory._operations:
+                            print(formatter.error(f"Unknown operation: {op_name}"))
+                            continue
+                        a = input(formatter.prompt("First number: ")).strip()
+                        if a.lower() == 'cancel':
+                            print(formatter.info("Queue add cancelled"))
+                            continue
+                        b = input(formatter.prompt("Second number: ")).strip()
+                        if b.lower() == 'cancel':
+                            print(formatter.info("Queue add cancelled"))
+                            continue
+
+                        try:
+                            operation = OperationFactory.create_operation(op_name)
+                            cmd = OperationCommand(operation, a, b)
+                            queue.add(cmd)
+                            print(formatter.success("Operation queued"))
+                        except Exception as e:  # pragma: no cover
+                            print(formatter.error(f"Could not queue operation: {e}")) # pragma: no cover
+                        continue
+
+                    if sub == 'run':
+                        # Execute all queued commands
+                        if not queue.list_commands():
+                            print(formatter.info("Queue is empty"))
+                            continue
+                        try:
+                            results = queue.execute_all(calc)
+                            for i, r in enumerate(results, 1):
+                                print(formatter.result(f"{i}. {r}"))
+                        except Exception as e:  # pragma: no cover
+                            print(formatter.error(f"Error executing queue: {e}")) # pragma: no cover
+                        continue
+
+                    if sub == 'show':
+                        cmds = queue.list_commands()
+                        if not cmds:
+                            print(formatter.info("Queue is empty"))
+                        else:
+                            for i, c in enumerate(cmds, 1):
+                                # Show operation class name and raw operands
+                                print(formatter.info(f"{i}. {type(c.operation).__name__}({c.a}, {c.b})"))
+                        continue
+
+                    if sub == 'clear':
+                        queue.clear()
+                        print(formatter.success("Queue cleared"))
+                        continue
 
                 if command == 'clear':
                     # Clear calculation history
@@ -122,10 +191,11 @@ def calculator_repl():
 
                         # Create the appropriate operation instance using the Factory pattern
                         operation = OperationFactory.create_operation(command)
-                        calc.set_operation(operation)
 
-                        # Perform the calculation
-                        result = calc.perform_operation(a, b)
+                        # Wrap it in a Command object and execute via the Calculator immediately
+                        # (Note: to queue operations use the 'queue add' command)
+                        cmd = OperationCommand(operation, a, b)
+                        result = calc.execute_command(cmd)
 
                         # Normalize the result if it's a Decimal
                         if isinstance(result, Decimal):
@@ -142,6 +212,7 @@ def calculator_repl():
 
                 # Handle unknown commands
                 print(formatter.warning(f"Unknown command: '{command}'. Type 'help' for available commands."))
+                continue
             except KeyboardInterrupt:
                 # Handle Ctrl+C interruption gracefully
                 print(formatter.error("\nOperation cancelled")) # pragma: no cover

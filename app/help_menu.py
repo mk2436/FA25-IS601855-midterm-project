@@ -16,14 +16,22 @@ class BasicHelp(HelpComponent):
     def render(self) -> str:
         return (
             "Available commands:\n"
-            "  <operations> - Perform calculations\n"
-            "  history - Show calculation history\n"
-            "  clear - Clear calculation history\n"
-            "  undo - Undo the last calculation\n"
-            "  redo - Redo the last undone calculation\n"
-            "  save - Save calculation history to file\n"
-            "  load - Load calculation history from file\n"
-            "  exit - Exit the calculator\n"
+            "  Operations:\n"
+            "   <operations>\n"
+            "\n"
+            " Queuing Operations:\n"
+            "   queue add <operation> <operand1> <operand2>     - Add operation to queue\n"
+            "   queue run                                       - Execute all queued operations\n"
+            "   queue show                                      - Show all queued operations\n"
+            "   queue clear                                     - Clear the operation queue\n\n"
+            " Other Commands:\n"
+            "   history     - Show calculation history\n"
+            "   clear       - Clear calculation history\n"
+            "   undo        - Undo the last calculation\n"
+            "   redo        - Redo the last undone calculation\n"
+            "   save        - Save calculation history to file\n"
+            "   load        - Load calculation history from file\n"
+            "   exit        - Exit the calculator\n"
         )
 
 
@@ -56,13 +64,19 @@ class OperationsHelpDecorator(HelpDecorator):
             operations_text = "  (no operations available)\n"
         else:
             lines = []
-            # Build a comma-separated short list and a detailed list
-            short_list = ", ".join(sorted(ops.keys()))
-            lines.append(f"  {short_list} - Perform calculations")
+            # Detailed listing (one per line) with short descriptions when available
+            for name in ops.keys():
+                cls = ops[name]
+                # Prefer DESCRIPTION attribute, fall back to first docstring line or class name
+                desc = getattr(cls, 'DESCRIPTION', None)
+                if not desc:
+                    doc = (cls.__doc__ or "").strip().splitlines()
+                    desc = doc[0] if doc else cls.__name__
+                lines.append(f"     {name.ljust(12)} - {desc}")
             operations_text = "\n".join(lines) + "\n"
 
         # Replace placeholder in base help with generated operations text
-        return base.replace("  <operations> - Perform calculations\n", operations_text)
+        return base.replace("   <operations>\n", operations_text)
 
 
 def build_help_menu() -> str:

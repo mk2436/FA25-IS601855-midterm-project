@@ -17,6 +17,7 @@ from app.exceptions import OperationError, ValidationError
 from app.history import HistoryObserver
 from app.input_validators import InputValidator
 from app.operations import Operation
+from app.commands import Command
 
 
 # Type aliases for better readability
@@ -232,6 +233,15 @@ class Calculator:
             # Log and raise operation errors for any other exceptions
             logging.error(f"Operation failed: {str(e)}")
             raise OperationError(f"Operation failed: {str(e)}")
+
+    def execute_command(self, command: Command) -> CalculationResult:
+        """Execute a Command object against this Calculator.
+
+        This is a thin invoker method that allows higher-level code to work with
+        Command objects rather than calling set_operation/perform_operation
+        directly. It returns whatever the underlying operation returns.
+        """
+        return command.execute(self)
 
     def save_history(self) -> None:
         """
