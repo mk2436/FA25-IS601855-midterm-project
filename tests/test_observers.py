@@ -33,7 +33,7 @@ from app.calculation import Calculation
 from app.history import AutoSaveObserver
 from app.calculator import Calculator
 from app.calculator_config import CalculatorConfig
-from app.logger import LoggingObserver 
+from app.history import LoggingObserver 
 
 # Sample setup for mock calculation
 calculation_mock = Mock(spec=Calculation)

@@ -28,7 +28,7 @@ from app.exceptions import OperationError, ValidationError
 from app.history import AutoSaveObserver
 from app.operations import OperationFactory
 from app.calculator_memento import CalculatorMemento
-from app.logger import LoggingObserver
+from app.history import LoggingObserver
 from app.ui_color import ColorFormatter
 
 

@@ -25,32 +25,30 @@ Key Features:
 
 
 import logging
-from app.calculation import Calculation
-from app.history import HistoryObserver
+from pathlib import Path
+import logging
+from typing import Optional
+from app.calculator_config import CalculatorConfig
 
 
-class LoggingObserver(HistoryObserver):
+
+def configure_logging(config: Optional[CalculatorConfig] = None) -> None:
     """
-    Observer that logs calculations to a file.
+    Configure Python logging using settings from CalculatorConfig.
 
-    Implements the Observer pattern by listening for new calculations and logging
-    their details to a log file.
+    Ensures the log directory exists and sets up file logging with INFO level.
     """
+    if config is None:
+        config = CalculatorConfig()
 
-    def update(self, calculation: Calculation) -> None:
-        """
-        Log calculation details.
+    log_dir = Path(config.log_dir)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = Path(config.log_file)
 
-        This method is called whenever a new calculation is performed. It records
-        the operation, operands, and result in the log file.
-
-        Args:
-            calculation (Calculation): The calculation that was performed.
-        """
-        if calculation is None:
-            raise AttributeError("Calculation cannot be None")
-        logging.info(
-            f"Calculation performed: {calculation.operation} "
-            f"({calculation.operand1}, {calculation.operand2}) = "
-            f"{calculation.result}"
-        )
+    logging.basicConfig(
+        filename=str(log_file),
+        level=logging.ERROR,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        force=True
+    )
+    logging.info(f"Logging initialized at: {log_file}")
