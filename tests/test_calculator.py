@@ -1,3 +1,19 @@
+"""
+tests/test_calculator.py
+
+Unit tests for the Calculator and related CLI/repl behaviour.
+
+This file focuses on integration-style tests for the `Calculator` class:
+- history management (save/load/clear)
+- performing operations via OperationFactory
+- undo/redo semantics and memento interactions
+- observer subscription behavior and logging
+- CLI/repl flows that print and read user input
+
+Tests use a temporary directory fixture and patching so they don't write
+to the repository or the user's home directory during test runs.
+"""
+
 import datetime
 from pathlib import Path
 import pandas as pd
@@ -16,13 +32,17 @@ from app.logger import LoggingObserver
 from app.ui_color import ColorFormatter
 
 
-# Creating a formatter instance for use in tests
+# Creating a formatter instance for use in tests (used to assert printed output)
 formatter = ColorFormatter()
 
 
-# ---------------------------
+# ------------------------------------------------------------
 # FIXTURE: Calculator instance
-# ---------------------------
+# Purpose: create a Calculator configured to use a TemporaryDirectory
+# so tests do not write to repository directories. Patches CalculatorConfig
+# properties to redirect logs and history into temp locations.
+# Yields: a configured Calculator instance for use in tests.
+# ------------------------------------------------------------
 @pytest.fixture
 def calculator():
     with TemporaryDirectory() as temp_dir:
@@ -43,9 +63,12 @@ def calculator():
             yield Calculator(config=config)
 
 
-# ---------------------------
+# ------------------------------------------------------------
 # TEST: History size limit
-# ---------------------------
+# Verifies `max_history_size` enforcement: when more calculations than
+# the max are performed, the oldest entries are pruned so history length
+# never exceeds the configured limit.
+# ------------------------------------------------------------
 @pytest.mark.parametrize(
     "operations,expected_history_length",
     [
@@ -63,9 +86,11 @@ def test_history_size_limit(calculator, operations, expected_history_length):
     assert len(calculator.history) == expected_history_length
 
 
-# ---------------------------
+# ------------------------------------------------------------
 # TEST: Calculator Initialization
-# ---------------------------
+# Confirms the Calculator starts with empty history and stacks and no
+# active operation strategy by default.
+# ------------------------------------------------------------
 @pytest.mark.parametrize(
     "expected_values",
     [
@@ -80,9 +105,11 @@ def test_calculator_initialization(calculator, expected_values):
     assert calculator.operation_strategy == exp_op
 
 
-# ---------------------------
+# ------------------------------------------------------------
 # TEST: Logging Setup
-# ---------------------------
+# Ensures that Calculator initialization configures logging and emits
+# an informational message about successful setup.
+# ------------------------------------------------------------
 @pytest.mark.parametrize(
     "log_dir,log_file",
     [
@@ -100,9 +127,12 @@ def test_logging_setup(logging_info_mock, log_dir, log_file):
         logging_info_mock.assert_any_call("Calculator initialized with configuration")
 
 
-# ---------------------------
+# ------------------------------------------------------------
 # TEST: Add/Remove Observers
-# ---------------------------
+# Verifies observer subscription mechanics: observers may be added and
+# removed; AutoSaveObserver requires the calculator instance in ctor.
+# Observers are used for logging, autosave, and other side-effect hooks.
+# ------------------------------------------------------------
 @pytest.mark.parametrize("observer_class", [LoggingObserver, AutoSaveObserver])
 def test_add_observer(calculator, observer_class):
     # AutoSaveObserver needs calculator passed in its constructor
@@ -119,9 +149,11 @@ def test_remove_observer(calculator, observer_class):
     assert observer not in calculator.observers
 
 
-# ---------------------------
+# ------------------------------------------------------------
 # TEST: Setting Operations
-# ---------------------------
+# Ensures the Calculator's operation strategy can be set from
+# OperationFactory-created operation instances.
+# ------------------------------------------------------------
 @pytest.mark.parametrize("operation_name", ["add", "subtract", "multiply", "divide"])
 def test_set_operation(calculator, operation_name):
     operation = OperationFactory.create_operation(operation_name)
@@ -129,9 +161,12 @@ def test_set_operation(calculator, operation_name):
     assert calculator.operation_strategy == operation
 
 
-# ---------------------------
+# ------------------------------------------------------------
 # TEST: Performing Operations
-# ---------------------------
+# Exercises perform_operation for many supported operation names and
+# asserts expected Decimal results. Also validates input validation
+# and proper exceptions when no operation is set.
+# ------------------------------------------------------------
 @pytest.mark.parametrize(
     "op_name,a,b,expected_result",
     [
@@ -179,9 +214,11 @@ def test_perform_operation_operation_error(calculator, a, b):
         calculator.perform_operation(a, b)
 
 
-# ---------------------------
+# ------------------------------------------------------------
 # TEST: Undo / Redo
-# ---------------------------
+# Verifies undo and redo semantics, including interaction with the
+# memento stack and that history/redo stacks are updated appropriately.
+# ------------------------------------------------------------
 @pytest.mark.parametrize(
     "operation_name,a,b",
     [
@@ -213,9 +250,12 @@ def test_redo(calculator, operation_name, a, b):
     assert len(calculator.history) == 1
 
 
-# ---------------------------
+# ------------------------------------------------------------
 # TEST: History Management
-# ---------------------------
+# Covers save/load/clear operations for calculation history and
+# ensures persistence functions call pandas I/O appropriately and
+# load_history reconstructs Calculation instances.
+# ------------------------------------------------------------
 @patch('app.calculator.pd.DataFrame.to_csv')
 @pytest.mark.parametrize(
     "a,b",
@@ -260,9 +300,10 @@ def test_load_history(mock_exists, mock_read_csv, calculator, operation_name, op
         pytest.fail("Loading history failed due to OperationError")
 
 
-# ---------------------------
+# ------------------------------------------------------------
 # TEST: Clear History
-# ---------------------------
+# Ensures clear_history empties history and resets undo/redo stacks.
+# ------------------------------------------------------------
 @pytest.mark.parametrize(
     "operation_name,a,b",
     [
@@ -278,7 +319,11 @@ def test_clear_history(calculator, operation_name, a, b):
     assert calculator.history == []
     assert calculator.undo_stack == []
     assert calculator.redo_stack == []
-
+# ------------------------------------------------------------
+# TEST: REPL / CLI behaviors
+# Verifies calculator_repl interactions including exit and help flows
+# use patched builtins.input/print to simulate user interaction.
+# ------------------------------------------------------------
 @patch('builtins.input', side_effect=['exit'])
 @patch('builtins.print')
 def test_calculator_repl_exit(mock_print, mock_input):
@@ -314,21 +359,27 @@ def test_calculator_repl_addition(mock_print, mock_input, user_inputs, a, b):
 
 
 
-# ---------------------------
+# ------------------------------------------------------------
 # TEST: Empty History Saved
-# ---------------------------
+# Ensures save_history still calls pandas to_csv even when history is empty
+# (useful to validate that persistence handles empty datasets gracefully).
+# ------------------------------------------------------------
 def test_save_empty_history(calculator):
     with patch('app.calculator.pd.DataFrame.to_csv') as mock_to_csv:
         calculator.save_history()
         mock_to_csv.assert_called_once()
 
-# ---------------------------
-# TEST: Empty History Loaded with logs  
-# ---------------------------
+# ------------------------------------------------------------
+# TEST: Empty History Loaded
+# - When no history file exists, load_history should leave history empty.
+# - When a file exists but contains an empty DataFrame, load_history
+#   should log an informative message and not raise.
+# ------------------------------------------------------------
 def test_load_empty_history(calculator):
     with patch('app.calculator.Path.exists', return_value=False):
         calculator.load_history()
         assert calculator.history == []
+
 
 def test_load_empty_history_logs(calculator):
     with patch('app.calculator.Path.exists', return_value=True), \
@@ -357,10 +408,11 @@ def test_load_history_raises_operation_error(calculator):
         assert "CSV read error" in str(exc_info.value)
 
 
-# ---------------------------
-# TEST: Empty History Loaded as DataFrame
-# ---------------------------
-
+# ------------------------------------------------------------
+# TEST: get_history_dataframe
+# - Builds a pandas DataFrame from internal history for display/export
+# - Verifies correct number of rows and serialized 'result' values
+# ------------------------------------------------------------
 @pytest.mark.parametrize(
     "operations,expected_results",
     [
@@ -395,6 +447,11 @@ def test_get_history_dataframe(calculator, operations, expected_results):
 
 
 
+# ------------------------------------------------------------
+# TEST: show_history
+# Returns a list of human-readable strings describing history items.
+# This test verifies formatting and ordering of entries.
+# ------------------------------------------------------------
 @pytest.mark.parametrize(
     "operations,expected_history",
     [
@@ -424,6 +481,11 @@ def test_show_history(calculator, operations, expected_history):
     # Assert that output matches expected formatted strings
     assert history_output == expected_history
 
+# ------------------------------------------------------------
+# TEST: Undo (manual/memento interactions)
+# - checks undo when stack empty returns False
+# - verifies memento-based undo restores prior history and updates redo stack
+# ------------------------------------------------------------
 def test_undo(calculator):
     # Case 1: undo when nothing to undo
     assert calculator.undo() is False
@@ -523,6 +585,7 @@ def test_save_history_exception_block(calculator, history_items):
 
 
 def test_perform_operation_exception_block(calculator):
+    # TEST: perform_operation exception handling
     # Create a mock operation that will raise an exception
     mock_operation = Mock()
     mock_operation.execute.side_effect = Exception("Execution failed")
@@ -548,6 +611,7 @@ def test_perform_operation_exception_block(calculator):
 
 
 def test_setup_logging_exception(calculator):
+    # TEST: logging setup exception handling
     # Patch os.makedirs to raise an exception
     with patch('app.calculator.os.makedirs', side_effect=Exception("Permission denied")), \
          patch('builtins.print') as mock_print:
@@ -570,8 +634,10 @@ def test_calculator_init_load_history_warning():
     config = CalculatorConfig()
 
     # Patch load_history to raise an exception, triggering the except block
+    # When load_history raises during init, Calculator should catch it and
+    # emit a warning rather than letting the exception propagate.
     with patch.object(Calculator, "load_history", side_effect=Exception("Test load failure")), \
-         patch("app.calculator.logging.warning") as mock_warning:
+        patch("app.calculator.logging.warning") as mock_warning:
         
         # Instantiate the calculator
         calc = Calculator(config=config)

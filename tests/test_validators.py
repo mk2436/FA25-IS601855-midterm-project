@@ -1,14 +1,33 @@
+"""
+tests/test_input_validators.py
+
+Unit tests for InputValidator.validate_number using CalculatorConfig constraints.
+
+These tests cover:
+- Valid number inputs: integers, decimals, strings, positive, negative, zero.
+- Input trimming for string numbers.
+- Invalid input handling: non-numeric strings, empty strings, whitespace, None.
+- Maximum value enforcement, both positive and negative.
+"""
+
 import pytest
 from decimal import Decimal
 from app.calculator_config import CalculatorConfig
 from app.exceptions import ValidationError
 from app.input_validators import InputValidator  # adjust as per your file structure
 
-# Sample configuration with a max input value of 1 million for testing purposes
+# ----------------------------------------------------------------------
+# Sample configuration
+# ----------------------------------------------------------------------
+# Set max input value to 1 million for testing validation limits.
+# ----------------------------------------------------------------------
 config = CalculatorConfig(max_input_value=Decimal('1000000'))
 
-# Test cases for InputValidator.validate_number
-
+# ----------------------------------------------------------------------
+# VALID NUMBER TESTS
+# ----------------------------------------------------------------------
+# Positive, negative, zero, integer, decimal, string input variants.
+# ----------------------------------------------------------------------
 def test_validate_number_positive_integer():
     assert InputValidator.validate_number(123, config) == Decimal('123')
 
@@ -39,7 +58,12 @@ def test_validate_number_zero():
 def test_validate_number_trimmed_string():
     assert InputValidator.validate_number("  456  ", config) == Decimal('456')
 
-# Negative test cases
+# ----------------------------------------------------------------------
+# INVALID INPUT TESTS
+# ----------------------------------------------------------------------
+# Ensure proper exceptions are raised for invalid formats, excessive values,
+# empty inputs, whitespace, None, and non-numeric types.
+# ----------------------------------------------------------------------
 def test_validate_number_invalid_string():
     with pytest.raises(ValidationError, match="Invalid number format: abc"):
         InputValidator.validate_number("abc", config)

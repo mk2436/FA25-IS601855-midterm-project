@@ -1,3 +1,25 @@
+"""
+tests/test_operations_parameterized.py
+
+This module provides parameterized test cases for all calculator operations using pytest.mark.parametrize.
+It complements test_operations.py by focusing on data-driven testing with multiple test scenarios.
+
+Key features:
+1. Tests all arithmetic and special operations with varied inputs
+2. Uses pytest's parametrize decorator for concise test definitions
+3. Covers edge cases and precision testing with Decimal numbers
+4. Validates both successful operations and error conditions
+5. Tests with:
+   - Positive/negative numbers
+   - Zero and near-zero values
+   - Large numbers and exponents
+   - Decimal precision cases
+   - Invalid inputs and error handling
+
+Each operation section is clearly marked with headers and includes both valid and invalid test cases
+where applicable. The precision is set to 28 digits for high-accuracy decimal calculations.
+"""
+
 import pytest
 from decimal import Decimal, getcontext
 from app.operations import (

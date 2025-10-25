@@ -1,76 +1,89 @@
+"""
+tests/test_calculator_memento.py
+
+Unit tests for the CalculatorMemento class and its integration with Calculation and OperationFactory.
+
+These tests cover:
+- Serialization and deserialization of CalculatorMemento objects.
+- Correct preservation of Calculation history and timestamps.
+- Simulation of undo/redo behavior using mementos.
+- Handling of single and multiple operations.
+- Edge cases including empty history, None values, large history, and invalid timestamps.
+
+The tests use pytest parametrize to cover multiple scenarios efficiently.
+"""
+
 import pytest
 from datetime import datetime
 from app.calculator_memento import CalculatorMemento
 from app.calculation import Calculation
 from app.operations import OperationFactory
 
+
+# ---------------------------
+# Basic Serialization Tests
+# ---------------------------
+
 def test_calculator_memento_to_dict():
-    # Create a sample Calculation instance
+    """
+    Test that a CalculatorMemento object can be correctly serialized to a dictionary.
+    Ensures that:
+    - history is a list of dictionaries
+    - calculation fields are serialized as strings
+    - timestamp field exists
+    """
     calc = Calculation(
         operation=str(OperationFactory.create_operation('add')),
         operand1=2,
         operand2=3
     )
-
-    # Create a memento with the calculation in history
     memento = CalculatorMemento(history=[calc])
-
-    # Convert memento to dictionary
     memento_dict = memento.to_dict()
 
-    # Check that 'history' is a list of dictionaries
     assert isinstance(memento_dict['history'], list)
     assert all(isinstance(item, dict) for item in memento_dict['history'])
 
-    # Check that the calculation inside history is serialized correctly
     history_item = memento_dict['history'][0]
     assert history_item['operation'] == str(calc.operation)
-    assert history_item['operand1'] == str(calc.operand1)  # compare as string
-    assert history_item['operand2'] == str(calc.operand2)  # compare as string
-    assert history_item['result'] == str(calc.result)      # compare as string
+    assert history_item['operand1'] == str(calc.operand1)
+    assert history_item['operand2'] == str(calc.operand2)
+    assert history_item['result'] == str(calc.result)
     assert 'timestamp' in memento_dict
 
 
 def test_calculator_memento_from_dict():
-    # Prepare a sample serialized calculation
+    """
+    Test deserialization of a CalculatorMemento from a dictionary.
+    Verifies:
+    - history is restored correctly
+    - individual Calculation objects maintain their data
+    - timestamp is correctly restored
+    """
     calc = Calculation(
         operation=str(OperationFactory.create_operation('add')),
         operand1=2,
         operand2=3
     )
     calc_dict = calc.to_dict()
-
-    # Prepare a serialized memento dictionary
     timestamp = datetime.now()
     memento_dict = {
         'history': [calc_dict],
         'timestamp': timestamp.isoformat()
     }
 
-    # Deserialize memento from dictionary
     memento = CalculatorMemento.from_dict(memento_dict)
-
-    # Check that the history was restored correctly
     assert len(memento.history) == 1
     restored_calc = memento.history[0]
     assert restored_calc.operation == calc.operation
     assert restored_calc.operand1 == calc.operand1
     assert restored_calc.operand2 == calc.operand2
     assert restored_calc.result == calc.result
-
-    # Check that the timestamp was restored correctly
     assert memento.timestamp == timestamp
 
 
-
-import pytest
-from datetime import datetime
-from app.calculator_memento import CalculatorMemento
-from app.calculation import Calculation
-from app.operations import OperationFactory
-
-# --- Existing tests remain unchanged ---
-
+# ---------------------------
+# Undo/Redo Simulation Tests
+# ---------------------------
 
 @pytest.mark.parametrize(
     "op_name, operand1, operand2, expected_result",
@@ -83,38 +96,42 @@ from app.operations import OperationFactory
 )
 def test_undo_redo_simulation(op_name, operand1, operand2, expected_result):
     """
-    Simulate undo/redo using CalculatorMemento.
+    Simulate undo and redo using CalculatorMemento objects.
+    Steps:
+    1. Perform an operation and save initial state
+    2. Perform a second operation and save updated state
+    3. Undo by restoring previous memento
+    4. Redo by restoring after-memento
     """
-    # Step 1: Perform operation and create calculation
     operation = str(OperationFactory.create_operation(op_name))
     calc = Calculation(operation=operation, operand1=operand1, operand2=operand2)
     
-    # Step 2: Save state in memento (before undo/redo)
     history = [calc]
     memento_before = CalculatorMemento(history=list(history))
 
-    # Step 3: Simulate performing another operation
     new_calc = Calculation(
         operation=str(OperationFactory.create_operation("add")),
         operand1=10,
         operand2=20
     )
     history.append(new_calc)
-    
-    # Save state after new operation
     memento_after = CalculatorMemento(history=list(history))
 
-    # Step 4: Undo: restore history from previous memento
+    # Undo check
     history_restored = memento_before.history
     assert len(history_restored) == 1
     restored_calc = history_restored[0]
     assert restored_calc.result == expected_result
 
-    # Step 5: Redo: restore history from after-memento
+    # Redo check
     history_redo = memento_after.history
     assert len(history_redo) == 2
     assert history_redo[1].result == new_calc.result
 
+
+# ---------------------------
+# Timestamp Handling Tests
+# ---------------------------
 
 @pytest.mark.parametrize(
     "custom_timestamp",
@@ -125,6 +142,9 @@ def test_undo_redo_simulation(op_name, operand1, operand2, expected_result):
     ]
 )
 def test_memento_with_custom_timestamp(custom_timestamp):
+    """
+    Ensure CalculatorMemento can handle custom timestamps correctly.
+    """
     memento = CalculatorMemento(history=[], timestamp=custom_timestamp)
     data = memento.to_dict()
     restored = CalculatorMemento.from_dict(data)
@@ -132,6 +152,9 @@ def test_memento_with_custom_timestamp(custom_timestamp):
     assert restored.history == []
 
 
+# ---------------------------
+# Single Operation Serialization
+# ---------------------------
 
 @pytest.mark.parametrize(
     "operation_name,operand1,operand2",
@@ -143,22 +166,23 @@ def test_memento_with_custom_timestamp(custom_timestamp):
     ]
 )
 def test_memento_single_operation_serialization(operation_name, operand1, operand2):
-    # Create calculation
+    """
+    Test serialization and deserialization of a memento with a single calculation.
+    Ensures fields are correctly preserved in both directions.
+    """
     op = str(OperationFactory.create_operation(operation_name))
     calc = Calculation(operation=op, operand1=operand1, operand2=operand2)
-
-    # Create memento
     memento = CalculatorMemento(history=[calc])
     data = memento.to_dict()
 
-    # Check serialization
+    # Verify serialization
     assert data['history'][0]['operation'] == str(calc.operation)
     assert data['history'][0]['operand1'] == str(calc.operand1)
     assert data['history'][0]['operand2'] == str(calc.operand2)
     assert data['history'][0]['result'] == str(calc.result)
     assert 'timestamp' in data
 
-    # Deserialize and check
+    # Verify deserialization
     restored = CalculatorMemento.from_dict(data)
     restored_calc = restored.history[0]
     assert restored_calc.operation == calc.operation
@@ -167,6 +191,10 @@ def test_memento_single_operation_serialization(operation_name, operand1, operan
     assert restored_calc.result == calc.result
     assert restored.timestamp == memento.timestamp
 
+
+# ---------------------------
+# Multiple Operations Tests
+# ---------------------------
 
 @pytest.mark.parametrize(
     "operations",
@@ -177,7 +205,9 @@ def test_memento_single_operation_serialization(operation_name, operand1, operan
     ]
 )
 def test_memento_multiple_operations(operations):
-    # Create calculations
+    """
+    Test memento serialization/deserialization for multiple calculations in history.
+    """
     history = [
         Calculation(
             operation=str(OperationFactory.create_operation(op_name)),
@@ -186,15 +216,11 @@ def test_memento_multiple_operations(operations):
         )
         for op_name, a, b in operations
     ]
-
-    # Create memento
     memento = CalculatorMemento(history=history)
     data = memento.to_dict()
 
-    # Check history length
     assert len(data['history']) == len(operations)
 
-    # Deserialize and check all operations
     restored = CalculatorMemento.from_dict(data)
     assert len(restored.history) == len(operations)
     for original, restored_calc in zip(history, restored.history):
@@ -204,31 +230,34 @@ def test_memento_multiple_operations(operations):
         assert restored_calc.result == original.result
 
 
-
-
 # ---------------------------
-# Edge-case
+# Edge Case Tests
 # ---------------------------
 
 @pytest.mark.parametrize(
     "history_ops",
     [
         [],  # Empty history
-        [None],  # None in history
+        [None],  # History containing None
         [
             Calculation(
                 operation=str(OperationFactory.create_operation("add")),
                 operand1=1,
                 operand2=2
             )
-        ] * 50  # Large history (50 repeated calculations)
+        ] * 50  # Large history
     ]
 )
 def test_memento_edge_cases_history(history_ops):
+    """
+    Test how memento handles edge cases in history:
+    - empty list
+    - None entries (should raise)
+    - large histories
+    """
     memento = CalculatorMemento(history=history_ops)
     
     if history_ops == [None]:
-        # Expect AttributeError when serializing a None calculation
         with pytest.raises(AttributeError):
             memento.to_dict()
     else:
@@ -247,6 +276,10 @@ def test_memento_edge_cases_history(history_ops):
     ]
 )
 def test_memento_edge_cases_timestamp(timestamp_str, should_raise):
+    """
+    Test deserialization behavior with various timestamp edge cases.
+    Ensures exceptions are raised for invalid timestamp values.
+    """
     if should_raise:
         with pytest.raises((ValueError, TypeError)):
             CalculatorMemento.from_dict({'history': [], 'timestamp': timestamp_str})
@@ -265,6 +298,9 @@ def test_memento_edge_cases_timestamp(timestamp_str, should_raise):
     ]
 )
 def test_memento_custom_timestamps(custom_timestamp):
+    """
+    Verify that CalculatorMemento correctly handles various custom timestamp values.
+    """
     memento = CalculatorMemento(history=[], timestamp=custom_timestamp)
     data = memento.to_dict()
     restored = CalculatorMemento.from_dict(data)

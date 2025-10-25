@@ -1,3 +1,32 @@
+
+"""
+tests/test_observers.py
+
+This module contains unit tests for the Observer pattern implementation in the calculator application.
+It tests two main observer classes:
+
+1. LoggingObserver:
+   - Tests logging of calculation operations
+   - Verifies correct log message formatting
+   - Includes parameterized tests for various calculation scenarios
+   - Tests error handling for invalid inputs
+
+2. AutoSaveObserver:
+   - Tests automatic saving of calculator history
+   - Verifies configuration-based auto-save behavior
+   - Tests error handling during save operations
+   - Includes parameterized tests for different auto-save scenarios
+
+The tests use pytest fixtures and mocking extensively to:
+- Mock calculator and calculation objects
+- Patch logging functionality
+- Test both success and failure scenarios
+- Validate observer pattern implementation
+- Verify error handling and edge cases
+
+Each section is clearly marked with headers and includes both positive and negative test cases.
+"""
+
 import pytest
 from unittest.mock import Mock, patch
 from app.calculation import Calculation

@@ -1,3 +1,23 @@
+"""
+tests/test_operations.py
+
+This module contains unit tests for the calculator's operation classes. It tests:
+1. Basic arithmetic operations (Addition, Subtraction, Multiplication, Division)
+2. Advanced operations (Power, Root, Modulus, Integer Division)
+3. Special operations (Percentage, Absolute Difference)
+4. Operation Factory functionality for creating operations
+5. Input validation and error handling for all operations
+
+Each operation is tested with:
+- Positive and negative numbers
+- Decimal values
+- Edge cases (zero, large numbers)
+- Invalid inputs where applicable
+
+The module uses a base test class (BaseOperationTest) that provides common test
+functionality for all operations, promoting DRY principles and consistent testing.
+"""
+
 import pytest
 from decimal import Decimal
 from typing import Any, Dict, Type
