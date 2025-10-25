@@ -1,6 +1,51 @@
 ########################
-# Calculator REPL       #
+# Calculator REPL      #
 ########################
+
+"""
+This module implements the interactive command-line interface (REPL) for the calculator
+application, providing a user-friendly interface for performing calculations and
+managing the calculator's state.
+
+Key Features:
+1. Command Processing:
+   - Interactive command input handling
+   - Extensive command set support
+   - Command history management
+   - Error handling and recovery
+   - Queue-based command batching
+
+2. Operation Management:
+   - All basic arithmetic operations
+   - Advanced mathematical functions
+   - Operation validation
+   - Result formatting
+   - Operation cancellation
+
+3. State Management:
+   - History tracking
+   - Undo/redo functionality
+   - State persistence
+   - Queue management
+   - Session recovery
+
+4. User Interface:
+   - Colored output formatting
+   - Clear error messages
+   - Interactive prompts
+   - Help system
+   - Progress feedback
+
+5. Integration Features:
+   - Observer pattern support
+   - Automatic history saving
+   - Logging system
+   - Command pattern implementation
+   - Factory pattern usage
+
+The REPL provides a robust, user-friendly interface with comprehensive error
+handling, state management, and a clean command structure for calculator operations.
+"""
 
 from decimal import Decimal
 import logging

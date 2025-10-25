@@ -1,3 +1,39 @@
+########################
+# Help Menu System     #
+########################
+
+"""
+This module implements the Help Menu system for the calculator application,
+utilizing the Decorator design pattern for modular, dynamic help text generation.
+
+Key Features:
+1. Base Help Component:
+   - BasicHelp provides static help text for non-operation commands
+   - Displays commands like history, clear, undo/redo, save/load, exit
+   - Supports queuing operations commands (add/run/show/clear)
+
+2. Decorator Pattern Integration:
+   - HelpDecorator serves as the base class for extending help components
+   - Allows additional features to be layered onto existing help text
+   - Ensures modularity and maintainability
+
+3. Dynamic Operations List:
+   - OperationsHelpDecorator appends available operations from OperationFactory
+   - Automatically reflects newly registered operations in the help menu
+   - Includes class descriptions or docstrings for clarity
+   - Handles empty operation lists gracefully
+
+4. Help Menu Builder:
+   - build_help_menu() constructs the full help menu string
+   - Combines base help text with dynamic operation listings
+   - Returns a ready-to-display string for the CLI
+
+5. Integration & Extensibility:
+   - Easily integrates with the main Calculator CLI
+   - Fully modular; supports adding new decorators for future enhancements
+   - Designed for readability, maintainability, and automatic updates
+"""
+
 from abc import ABC, abstractmethod
 from app.operations import OperationFactory
 

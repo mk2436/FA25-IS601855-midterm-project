@@ -2,6 +2,32 @@
 # Exception Hierarchy  #
 ########################
 
+"""
+This module defines the exception hierarchy for the calculator application,
+providing structured error handling across all components.
+
+Key Features:
+1. Base Exception:
+   - CalculatorError serves as the root for all calculator-specific errors
+   - Enables unified exception handling for the entire application
+
+2. Validation Errors:
+   - ValidationError is raised when user input is invalid
+   - Handles non-numeric values, out-of-range inputs, and other validation failures
+
+3. Operation Errors:
+   - OperationError is raised when a calculation operation fails
+   - Covers arithmetic errors such as division by zero and invalid operations
+
+4. Configuration Errors:
+   - ConfigurationError is raised when calculator settings are invalid
+   - Handles issues like improper directory paths, invalid configuration values, or missing settings
+
+5. Integration & Extensibility:
+   - Provides a clear hierarchy for catching and distinguishing error types
+   - Designed to support maintainable and scalable error handling across modules
+"""
+
 class CalculatorError(Exception):
     """
     Base exception class for calculator-specific errors.

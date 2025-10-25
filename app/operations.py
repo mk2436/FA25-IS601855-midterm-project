@@ -2,6 +2,41 @@
 # Operation Classes    #
 ########################
 
+"""
+This module defines the arithmetic operations and the OperationFactory for the
+calculator application, implementing the Strategy and Factory design patterns.
+
+Key Features:
+1. Operation Base Class:
+   - Operation is an abstract base class for all arithmetic operations
+   - Defines execute(a, b) and optional validate_operands(a, b) methods
+   - Provides __str__ for consistent operation naming
+
+2. Concrete Operations:
+   - Addition, Subtraction, Multiplication, Division, Power, Root
+   - Modulus, Integer Division, Percentage, Absolute Difference
+   - Each operation validates operands and executes its respective arithmetic
+   - Division, Root, Power, and Percentage include custom validation rules
+   - Descriptions provided for help text and documentation
+
+3. Factory Pattern:
+   - OperationFactory creates operation instances based on string identifiers
+   - Supports dynamic registration of new operations
+   - Decouples operation creation from Calculator class
+   - Promotes scalability and maintainability
+
+4. Error Handling:
+   - ValidationError raised for invalid operands
+   - ValueError raised for unknown operation types
+   - Ensures type safety and prevents illegal arithmetic operations
+
+5. Integration & Extensibility:
+   - Designed to work seamlessly with Calculator and Help Menu
+   - Adding new operations automatically updates the factory and help menu
+   - Supports modularity, readability, and future feature expansion
+"""
+
+
 from abc import ABC, abstractmethod
 from decimal import Decimal
 from typing import Dict

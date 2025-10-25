@@ -2,6 +2,29 @@
 # Input Validation     #
 ########################
 
+"""
+This module implements input validation and sanitization for the calculator
+application, ensuring all numeric inputs conform to configuration rules.
+
+Key Features:
+1. Validation Logic:
+   - InputValidator.validate_number converts inputs to Decimal
+   - Strips strings and normalizes numeric values
+   - Enforces maximum allowed value from CalculatorConfig
+   - Raises ValidationError for invalid or out-of-range inputs
+
+2. Type Safety & Error Handling:
+   - Supports int, float, Decimal, and string inputs
+   - Catches decimal conversion errors (InvalidOperation)
+   - Provides clear, descriptive error messages for users
+
+3. Integration & Extensibility:
+   - Designed to be used by Calculator before performing operations
+   - Supports seamless integration with other modules (Calculator, Operations)
+   - Centralized validation for maintainability and consistency
+"""
+
+
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import Any

@@ -2,6 +2,54 @@
 # Calculator Class     #
 ########################
 
+"""
+This module implements the core Calculator application, integrating multiple
+design patterns and providing robust calculation, history, and state management.
+
+Key Features:
+1. Calculation Management:
+   - Performs arithmetic operations using dynamic strategies
+   - Validates and sanitizes inputs
+   - Handles operation execution errors
+   - Returns typed results (Number or string for errors)
+
+2. History Tracking:
+   - Maintains a list of Calculation instances
+   - Supports human-readable history display
+   - Serializes/deserializes history to/from CSV
+   - Limits history size to configuration settings
+
+3. Undo/Redo Functionality:
+   - Implements Memento pattern for state snapshots
+   - Maintains undo and redo stacks
+   - Restores calculator state efficiently
+   - Supports multiple sequential undo/redo operations
+
+4. Observer Integration:
+   - Implements Observer pattern for history updates
+   - Registers, removes, and notifies observers
+   - Enables dynamic reactions to new calculations
+
+5. Configuration & Persistence:
+   - Loads settings from CalculatorConfig or environment
+   - Validates configuration parameters
+   - Creates directories for logs and history
+   - Logs operations, warnings, and errors
+   - Saves and loads history robustly, validating CSV structure
+
+6. Design Patterns Applied:
+   - Strategy pattern for operation execution
+   - Command pattern via execute_command() interface
+   - Memento pattern for undo/redo
+   - Observer pattern for history monitoring
+
+7. Integration & Extensibility:
+   - Easily integrates with external modules (Operations, Observers)
+   - Supports type-safe numeric operations
+   - Provides a DataFrame interface for advanced analysis
+   - Designed for maintainability, scalability, and testability
+"""
+
 from decimal import Decimal
 import logging
 import os

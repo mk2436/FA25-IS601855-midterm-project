@@ -2,6 +2,41 @@
 # Calculation Model    #
 ########################
 
+"""
+This module implements the core calculation functionality for the calculator application.
+It provides a robust and type-safe implementation of mathematical operations using
+Python's Decimal type for precise arithmetic calculations.
+
+Key Features:
+1. Value Object Pattern:
+   - Immutable calculation representation
+   - Built-in validation and error handling
+   - Comprehensive equality comparison
+
+2. Mathematical Operations:
+   - Basic arithmetic (addition, subtraction, multiplication, division)
+   - Advanced operations (power, root, modulus, integer division)
+   - Specialized calculations (percentage, absolute difference)
+
+3. Data Management:
+   - Serialization support for persistence
+   - ISO format timestamp tracking
+   - Result formatting with configurable precision
+
+4. Error Handling:
+   - Comprehensive validation for all operations
+   - Specific error types for different failure cases
+   - Detailed error messages for debugging
+
+5. Design Patterns:
+   - Dataclass for clean attribute management
+   - Factory methods for object creation
+   - Observer pattern support through result tracking
+
+The module emphasizes type safety, precision, and maintainability while providing
+a clean interface for performing and managing calculations.
+"""
+
 from dataclasses import dataclass, field
 import datetime
 from decimal import Decimal, InvalidOperation

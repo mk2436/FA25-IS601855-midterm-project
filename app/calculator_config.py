@@ -2,6 +2,47 @@
 # Calculator Config    #
 ########################
 
+"""
+This module manages the configuration system for the calculator application, providing
+a flexible and environment-aware configuration management system.
+
+Key Features:
+1. Environment Integration:
+   - Loads configuration from environment variables
+   - Supports .env file configuration
+   - Provides fallback default values
+   - Allows runtime configuration override
+
+2. File System Management:
+   - Manages application directories (logs, history)
+   - Handles file paths dynamically
+   - Resolves project root directory
+   - Ensures consistent path handling across platforms
+
+3. Configuration Parameters:
+   - History size limits
+   - Auto-save preferences
+   - Calculation precision
+   - Input value constraints
+   - File encoding settings
+   - Directory locations
+
+4. Validation System:
+   - Validates all configuration parameters
+   - Ensures positive numeric values
+   - Verifies directory permissions
+   - Provides detailed error messages
+
+5. Flexibility:
+   - Supports multiple configuration sources
+   - Allows partial configuration updates
+   - Maintains backward compatibility
+   - Provides clean property access
+
+The module uses a dataclass-based approach for clean attribute management and
+provides comprehensive validation to ensure configuration integrity.
+"""
+
 from dataclasses import dataclass
 from decimal import Decimal
 from numbers import Number

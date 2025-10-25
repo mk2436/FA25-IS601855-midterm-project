@@ -1,6 +1,45 @@
 ########################
-# Calculator Memento    #
+# Calculator Memento   #
 ########################
+
+"""
+This module implements the Memento design pattern for the calculator application,
+providing state management and history tracking capabilities.
+
+Key Features:
+1. State Management:
+   - Captures complete calculator history state
+   - Maintains timestamps for state changes
+   - Supports state restoration
+   - Enables undo/redo operations
+
+2. Serialization Support:
+   - Converts states to/from dictionary format
+   - Handles complex object serialization
+   - Preserves calculation history
+   - Maintains temporal information
+
+3. Design Pattern Implementation:
+   - Pure Memento pattern implementation
+   - Immutable state snapshots
+   - Clean separation of concerns
+   - Type-safe state handling
+
+4. History Tracking:
+   - Stores complete calculation sequences
+   - Preserves calculation order
+   - Maintains calculation metadata
+   - Enables history traversal
+
+5. Integration Features:
+   - Seamless Calculator class integration
+   - Efficient state restoration
+   - Minimal memory footprint
+   - Thread-safe operations
+
+The module uses dataclasses for clean state representation and provides
+comprehensive serialization support for persistent storage of calculator states.
+"""
 
 from dataclasses import dataclass, field
 import datetime

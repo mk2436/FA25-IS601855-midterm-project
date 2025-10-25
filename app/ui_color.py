@@ -1,3 +1,38 @@
+########################
+# Color Formatting     #
+########################
+
+"""
+This module provides centralized colorized message formatting for console output
+using the `colorama` library. It implements a Singleton design pattern to ensure
+consistent styling across the entire application.
+
+Key Features:
+1. Singleton Implementation:
+   - Ensures only one shared instance of ColorFormatter exists
+   - Provides a global access point for message styling
+   - Avoids unnecessary memory overhead from multiple instances
+
+2. Standardized Color Schemes:
+   - success(message): Bright green
+   - error(message): Bright red
+   - warning(message): Magenta
+   - info(message): Yellow
+   - result(message): Bright cyan
+   - prompt(message): Blue
+   - All methods automatically reset formatting after the message
+
+3. Integration & Consistency:
+   - Designed for CLI tools, including the calculator REPL
+   - Promotes uniform color usage across all modules
+   - Simplifies code maintenance and ensures visual consistency
+
+4. Design Rationale:
+   - Singleton chosen because formatting is stateless and deterministic
+   - Factory pattern not needed due to fixed, reusable formatting behaviors
+   - Provides lightweight, easy-to-use interface for developers
+"""
+
 from colorama import Fore, Style, init
 
 # Initialize colorama for cross-platform colored output
